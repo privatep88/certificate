@@ -996,8 +996,15 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
       },
     ];
 
+    const apiBase = (import.meta.env?.VITE_API_BASE_URL || '').replace(/\/$/, '');
+    if (!apiBase && typeof window !== 'undefined' && window.location.hostname.endsWith('.github.io')) {
+      setAiSuggestions(buildLocalSmartSuggestions());
+      setAiLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch('/api/ai/generate-text', {
+      const response = await fetch(`${apiBase}/api/ai/generate-text`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

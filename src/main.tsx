@@ -10,8 +10,6 @@ if (!rootElement) {
   throw new Error('Root element #root was not found in index.html');
 }
 
-(window as unknown as Record<string, boolean>).__CERT_STUDIO_MOUNTED__ = true;
-
 createRoot(rootElement).render(
   <React.StrictMode>
     <ErrorBoundary>

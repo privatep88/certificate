@@ -111,16 +111,25 @@ function saveLocalAuthDb(db: LocalAuthDatabase): void {
   }
 }
 
+export function isStaticOnlyHost(): boolean {
+  if (API_BASE) return false;
+  if (typeof window === 'undefined') return false;
+  return window.location.hostname.endsWith('.github.io');
+}
+
 /**
  * Helper that attempts a backend JSON request first.
- * If the app is hosted on a static server (like GitHub Pages) where `/api/*` returns 404 HTML
- * or network failure, it returns `{ backendAvailable: false }` so the caller can use the
- * local Web Crypto auth engine seamlessly instead of failing or crashing.
+ * If the app is hosted on a static server (like GitHub Pages) where `/api/*` is not present,
+ * it returns `{ backendAvailable: false }` so the caller uses the local Web Crypto auth engine
+ * without generating 404 console errors.
  */
 async function tryBackendJson<T>(
   path: string,
   init?: RequestInit
 ): Promise<{ backendAvailable: true; ok: boolean; status: number; data: T } | { backendAvailable: false }> {
+  if (isStaticOnlyHost()) {
+    return { backendAvailable: false };
+  }
   try {
     const res = await fetch(apiUrl(path), init);
     const contentType = res.headers.get('content-type') || '';

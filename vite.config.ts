@@ -4,11 +4,11 @@ import fs from 'fs';
 import path from 'path';
 import {defineConfig} from 'vite';
 
-export default defineConfig(() => {
+export default defineConfig(({ command }) => {
   return {
-    // Use relative base path './' by default so built assets in dist/ work seamlessly
-    // on GitHub Pages subpaths (https://username.github.io/repo-name/) as well as root domains (/).
-    base: process.env.VITE_BASE_PATH || './',
+    // In production build for https://privatep88.github.io/certificate/, default base is '/certificate/'.
+    // In dev server (AI Studio preview), base is '/'.
+    base: process.env.VITE_BASE_PATH || (command === 'build' ? '/certificate/' : '/'),
     plugins: [
       react(),
       tailwindcss(),
