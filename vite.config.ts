@@ -4,11 +4,12 @@ import fs from 'fs';
 import path from 'path';
 import {defineConfig} from 'vite';
 
-export default defineConfig(({ command }) => {
+export default defineConfig(({ mode }) => {
+  // In production (build & preview for https://privatep88.github.io/certificate/), base is '/certificate/'.
+  // In local development (AI Studio dev server), base is '/'.
+  const isProd = mode === 'production' || process.env.NODE_ENV === 'production';
   return {
-    // In production build for https://privatep88.github.io/certificate/, default base is '/certificate/'.
-    // In dev server (AI Studio preview), base is '/'.
-    base: process.env.VITE_BASE_PATH || (command === 'build' ? '/certificate/' : '/'),
+    base: process.env.VITE_BASE_PATH || (isProd ? '/certificate/' : '/'),
     plugins: [
       react(),
       tailwindcss(),
