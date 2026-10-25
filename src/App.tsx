@@ -52,6 +52,7 @@ import { EditorWorkspace } from './components/EditorWorkspace';
 import { ExportModal } from './components/ExportModal';
 import { BatchGenerator } from './components/BatchGenerator';
 import { AuthPage, AuthenticatedUser } from './components/AuthPage';
+import { verifySessionToken, logoutSession } from './utils/authService';
 import { exportDesignAsJson } from './utils/exportCertificate';
 
 type NavSection =
@@ -141,18 +142,16 @@ export function App() {
     return !token;
   });
 
-  // Verify token against backend on boot
+  // Verify token against backend or local store on boot
   useEffect(() => {
     const token =
       localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
       sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
     if (!token) return;
 
-    fetch('/api/auth/session', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(async (res) => {
-        if (!res.ok) {
+    verifySessionToken(token)
+      .then((session) => {
+        if (!session.authenticated || !session.user) {
           localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
           localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
           sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
@@ -161,10 +160,7 @@ export function App() {
           setShowAuthView(true);
           return;
         }
-        const data = await res.json();
-        if (data?.user) {
-          setCurrentUser(data.user);
-        }
+        setCurrentUser(session.user);
       })
       .catch(() => {
         // Keep cached user if offline
@@ -198,14 +194,7 @@ export function App() {
       localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
       sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
     if (token) {
-      try {
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      } catch {
-        // ignore
-      }
+      await logoutSession(token);
     }
     localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.AUTH_USER);

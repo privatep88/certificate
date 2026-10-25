@@ -17,6 +17,13 @@ import {
   User,
   Building2,
 } from 'lucide-react';
+import {
+  checkAuthProviders,
+  loginWithCredentials,
+  registerUserAccount,
+  requestPasswordRecovery,
+  resetPasswordWithCode,
+} from '../utils/authService';
 
 export interface AuthenticatedUser {
   id: string;
@@ -68,8 +75,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
   useEffect(() => {
     let mounted = true;
-    fetch('/api/auth/providers')
-      .then((r) => (r.ok ? r.json() : null))
+    checkAuthProviders()
       .then((data) => {
         if (mounted && data) {
           setGoogleOAuthConfigured(Boolean(data.googleOAuthConfigured));
@@ -135,40 +141,36 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: cleanEmail,
-          password,
-          rememberMe,
-        }),
+      const result = await loginWithCredentials({
+        email: cleanEmail,
+        password,
+        rememberMe,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
+      if (!result.ok || !result.user || !result.token) {
         setStatusBanner({
           type: 'error',
           message:
-            data.error ||
-            'تعذر تسجيل الدخول. يرجى التأكد من صحة البريد الإلكتروني وكلمة المرور.',
+            result.error ||
+            'تعذر تسجيل الدخول. يرجى التأكد من صحة اسم المستخدم وكلمة المرور.',
         });
         return;
       }
 
       setStatusBanner({
         type: 'success',
-        message: data.message || 'تم تسجيل الدخول بنجاح! جاري تحويلك إلى المنصة...',
+        message: result.message || 'تم تسجيل الدخول بنجاح! جاري تحويلك إلى المنصة...',
       });
 
+      const authUser = result.user;
+      const authToken = result.token;
       setTimeout(() => {
-        onAuthenticated(data.user, data.token, rememberMe);
-      }, 350);
+        onAuthenticated(authUser, authToken, rememberMe);
+      }, 300);
     } catch {
       setStatusBanner({
         type: 'error',
-        message: 'تعذر الاتصال بخادم المصادقة. يرجى التحقق من اتصالك والمحاولة مرة أخرى.',
+        message: 'حدث خطأ غير متوقع أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.',
       });
     } finally {
       setIsSubmitting(false);
@@ -212,40 +214,36 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: cleanName,
-          email: cleanEmail,
-          organization: organization.trim(),
-          password,
-          rememberMe,
-        }),
+      const result = await registerUserAccount({
+        fullName: cleanName,
+        email: cleanEmail,
+        organization: organization.trim(),
+        password,
+        rememberMe,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
+      if (!result.ok || !result.user || !result.token) {
         setStatusBanner({
           type: 'error',
-          message: data.error || 'تعذر إنشاء الحساب. يرجى المحاولة مرة أخرى.',
+          message: result.error || 'تعذر إنشاء الحساب. يرجى المحاولة مرة أخرى.',
         });
         return;
       }
 
       setStatusBanner({
         type: 'success',
-        message: data.message || 'تم إنشاء الحساب بنجاح! جاري فتح المنصة...',
+        message: result.message || 'تم إنشاء الحساب بنجاح! جاري فتح المنصة...',
       });
 
+      const authUser = result.user;
+      const authToken = result.token;
       setTimeout(() => {
-        onAuthenticated(data.user, data.token, rememberMe);
-      }, 350);
+        onAuthenticated(authUser, authToken, rememberMe);
+      }, 300);
     } catch {
       setStatusBanner({
         type: 'error',
-        message: 'حدث خطأ في الاتصال بالخادم أثناء إنشاء الحساب.',
+        message: 'حدث خطأ غير متوقع أثناء إنشاء الحساب.',
       });
     } finally {
       setIsSubmitting(false);
@@ -267,34 +265,28 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
+      const result = await requestPasswordRecovery(cleanEmail);
+      if (!result.ok) {
         setStatusBanner({
           type: 'error',
-          message: data.error || 'تعذر العثور على الحساب.',
+          message: result.error || 'تعذر العثور على الحساب.',
         });
         return;
       }
 
-      if (data.recoveryCode) {
-        setGeneratedResetCodeHint(String(data.recoveryCode));
-        setResetCode(String(data.recoveryCode));
+      if (result.recoveryCode) {
+        setGeneratedResetCodeHint(String(result.recoveryCode));
+        setResetCode(String(result.recoveryCode));
       }
       setMode('reset');
       setStatusBanner({
         type: 'info',
-        message: data.message,
+        message: result.message || 'تم إنشاء رمز الاستعادة بنجاح.',
       });
     } catch {
       setStatusBanner({
         type: 'error',
-        message: 'تعذر الاتصال بالخادم لاستعادة كلمة المرور.',
+        message: 'حدث خطأ أثناء معالجة طلب استعادة كلمة المرور.',
       });
     } finally {
       setIsSubmitting(false);
@@ -326,21 +318,15 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: email.trim(),
-          code: resetCode.trim(),
-          newPassword: password,
-        }),
+      const result = await resetPasswordWithCode({
+        email: email.trim(),
+        code: resetCode.trim(),
+        newPassword: password,
       });
-
-      const data = await response.json();
-      if (!response.ok) {
+      if (!result.ok) {
         setStatusBanner({
           type: 'error',
-          message: data.error || 'تعذر إعادة تعيين كلمة المرور.',
+          message: result.error || 'تعذر إعادة تعيين كلمة المرور.',
         });
         return;
       }
@@ -351,12 +337,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       setMode('login');
       setStatusBanner({
         type: 'success',
-        message: data.message || 'تم تحديث كلمة المرور بنجاح! يمكنك تسجيل الدخول الآن.',
+        message: result.message || 'تم تحديث كلمة المرور بنجاح! يمكنك تسجيل الدخول الآن.',
       });
     } catch {
       setStatusBanner({
         type: 'error',
-        message: 'حدث خطأ أثناء الاتصال بالخادم.',
+        message: 'حدث خطأ غير متوقع أثناء تحديث كلمة المرور.',
       });
     } finally {
       setIsSubmitting(false);
@@ -369,7 +355,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       setStatusBanner({
         type: 'info',
         message:
-          'تسجيل الدخول عبر Google يتطلب ضبط معرف العميل (GOOGLE_CLIENT_ID) في إعدادات بيئة المشروع. يمكنك تسجيل الدخول بالبريد الإلكتروني أو إنشاء حساب جديد فورًا.',
+          'تسجيل الدخول عبر Google يتطلب ضبط معرف العميل (GOOGLE_CLIENT_ID) في إعدادات بيئة الخادم. يمكنك تسجيل الدخول باسم المستخدم (user) أو إنشاء حساب جديد فورًا.',
       });
       return;
     }

@@ -956,38 +956,78 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   const handleGenerateAiWording = async () => {
     setAiLoading(true);
     setAiError(null);
-    try {
-      const recipientEl = design.elements.find(
-        (e): e is TextCertificateElement => e.type === 'text' && e.fieldRole === 'recipientName'
-      );
-      const orgEl = design.elements.find(
-        (e): e is TextCertificateElement => e.type === 'text' && e.fieldRole === 'organization'
-      );
-      const titleEl = design.elements.find(
-        (e): e is TextCertificateElement => e.type === 'text' && e.fieldRole === 'title'
-      );
 
+    const recipientEl = design.elements.find(
+      (e): e is TextCertificateElement => e.type === 'text' && e.fieldRole === 'recipientName'
+    );
+    const orgEl = design.elements.find(
+      (e): e is TextCertificateElement => e.type === 'text' && e.fieldRole === 'organization'
+    );
+    const titleEl = design.elements.find(
+      (e): e is TextCertificateElement => e.type === 'text' && e.fieldRole === 'title'
+    );
+
+    const certTitle = titleEl?.content || design.subtypeAr || 'شهادة شكر وتقدير';
+    const recipient = recipientEl?.content || 'إلى الأستاذ / خالد أحمد عبدالله الهاشمي';
+    const orgName = orgEl?.content || 'الجهة المانحة';
+    const occasion = aiOccasion.trim() || 'التميز في الأداء والعطاء المؤسسي المشرف';
+
+    const buildLocalSmartSuggestions = () => [
+      {
+        title: certTitle,
+        subtitle: 'تقديرًا للتميز والإخلاص في الأداء المهني',
+        introText: `تتشرف ${orgName} بمنح هذه الشهادة التقديرية إلى:`,
+        bodyText: `تقديرًا وعرفانًا لجهوده المتميزة وإسهاماته الفاعلة في ${occasion}، وما قدمه من نموذج مشرف في الكفاءة والالتزام والابتكار، متمنين له دوام التوفيق والريادة.`,
+        closingText: 'مع خالص الشكر والتقدير والاعتزاز',
+      },
+      {
+        title: certTitle,
+        subtitle: 'وسام الاستحقاق والجودة المؤسسية',
+        introText: `يسر إدارة ${orgName} أن تتقدم بخالص الشكر والتقدير إلى:`,
+        bodyText: `وذلك نظير ما بذله من عطاء استثنائي وتفانٍ ملموس في ${occasion}، مما أسهم بفاعلية في تحقيق المستهدفات الاستراتيجية ورفع معايير الجودة والتميز.`,
+        closingText: 'سائلين المولى عز وجل له مزيدًا من النجاح والتألق',
+      },
+      {
+        title: certTitle,
+        subtitle: 'شهادة اعتزاز وتكريم رسمي',
+        introText: `تمنح ${orgName} هذه الشهادة بكل فخر واعتزاز إلى:`,
+        bodyText: `تثمينًا لدوره الريادي وجهوده المخلصة في ${occasion}، وإشادًة بما أظهره من احترافية عالية وروح مبادرة مسؤولة تستحق التكريم والإشادة.`,
+        closingText: 'ودمتم ذخراً للتميز والإبداع',
+      },
+    ];
+
+    try {
       const response = await fetch('/api/ai/generate-text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          certificateType: titleEl?.content || design.subtypeAr || 'شهادة شكر وتقدير',
-          recipientName: recipientEl?.content || 'اسم المستفيد',
-          organizationName: orgEl?.content || 'الجهة المانحة',
+          certificateType: certTitle,
+          recipientName: recipient,
+          organizationName: orgName,
           occasionOrCourse: aiOccasion,
           tone: aiTone,
           language: design.language,
         }),
       });
 
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        // Static hosting fallback (e.g., GitHub Pages where /api/* returns HTML 404)
+        setAiSuggestions(buildLocalSmartSuggestions());
+        return;
+      }
+
       const data = await response.json();
       if (!response.ok) {
-        setAiError(data.error || 'تعذر الاتصال بخدمة الذكاء الاصطناعي');
-      } else if (Array.isArray(data.suggestions)) {
+        setAiSuggestions(buildLocalSmartSuggestions());
+      } else if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
         setAiSuggestions(data.suggestions);
+      } else {
+        setAiSuggestions(buildLocalSmartSuggestions());
       }
-    } catch (err: unknown) {
-      setAiError(err instanceof Error ? err.message : 'تعذر الاتصال بالخادم');
+    } catch {
+      // Network or static hosting fallback
+      setAiSuggestions(buildLocalSmartSuggestions());
     } finally {
       setAiLoading(false);
     }
