@@ -8,6 +8,7 @@ import {
   SealVariant,
 } from '../types/certificate';
 import { ARTISTIC_STYLES, BUILTIN_LOGOS } from './stylesAndAssets';
+import { NEW_SAUDI_OFFICIAL_TEMPLATES } from './saudiCertificateAssets';
 
 interface TemplateSeed {
   id: string;
@@ -3116,7 +3117,10 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
   },
 ];
 
-export const INITIAL_TEMPLATES: CertificateDesign[] = TEMPLATE_SEEDS.map(buildTemplateFromSeed);
+export const INITIAL_TEMPLATES: CertificateDesign[] = [
+  ...NEW_SAUDI_OFFICIAL_TEMPLATES,
+  ...TEMPLATE_SEEDS.map(buildTemplateFromSeed),
+];
 
 export function createBlankCertificate(orientation: PageOrientation = 'landscape', language: 'ar' | 'en' = 'ar'): CertificateDesign {
   const widthPx = orientation === 'landscape' ? 1123 : 794;

@@ -5,6 +5,12 @@ import {
   OrnamentVariant,
   SealVariant,
 } from '../types/certificate';
+import {
+  SAUDI_MOE_LOGO_SVG,
+  GULF_TALENT_2026_LOGO_SVG,
+  SPACE_WEEK_2025_LOGO_SVG,
+  TEACHER_DAY_2025_LOGO_SVG,
+} from './saudiCertificateAssets';
 
 export const CERTIFICATE_CATEGORIES: CertificateCategory[] = [
   {
@@ -15,6 +21,8 @@ export const CERTIFICATE_CATEGORIES: CertificateCategory[] = [
     descriptionEn: 'Prestigious templates for expressing gratitude to employees, teachers, students, and partners.',
     subtypesAr: [
       'شهادة شكر وتقدير عامة',
+      'شهادة اليوم الخليجي للموهبة والإبداع',
+      'شهادة يوم المعلم',
       'شهادة شكر لموظف',
       'شهادة شكر لمعلم أو معلمة',
       'شهادة شكر لطالب أو طالبة',
@@ -83,6 +91,7 @@ export const CERTIFICATE_CATEGORIES: CertificateCategory[] = [
       'Note: Graduation and academic templates are customizable design templates for celebration and recognition, not government-accredited official transcripts.',
     subtypesAr: [
       'شهادة نجاح',
+      'شهادة أسبوع الفضاء العالمي',
       'شهادة تفوق دراسي',
       'شهادة مشاركة مدرسية',
       'شهادة اجتياز مستوى تعليمي',
@@ -1374,6 +1383,30 @@ export const BUILTIN_LOGOS: {
   nameEn: string;
   src: string;
 }[] = [
+  {
+    id: 'logo-saudi-moe-official',
+    nameAr: 'شعار وزارة التعليم الرسمي (المملكة العربية السعودية)',
+    nameEn: 'Ministry of Education (Saudi Arabia)',
+    src: SAUDI_MOE_LOGO_SVG,
+  },
+  {
+    id: 'logo-gulf-talent-2026',
+    nameAr: 'شعار اليوم الخليجي للموهبة والإبداع 2026',
+    nameEn: 'Gulf Talent Day 2026',
+    src: GULF_TALENT_2026_LOGO_SVG,
+  },
+  {
+    id: 'logo-space-week-2025',
+    nameAr: 'شعار أسبوع الفضاء العالمي 2025',
+    nameEn: 'World Space Week 2025',
+    src: SPACE_WEEK_2025_LOGO_SVG,
+  },
+  {
+    id: 'logo-teacher-day-2025',
+    nameAr: 'شعار يوم المعلم الرسمي 2025',
+    nameEn: 'World Teacher Day 2025',
+    src: TEACHER_DAY_2025_LOGO_SVG,
+  },
   {
     id: 'logo-academy-gold',
     nameAr: 'شعار أكاديمية الريادة (ذهبي وكحلي)',
