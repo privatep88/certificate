@@ -1,0 +1,6 @@
+{
+  "name": "Certificate Studio AI | استوديو الشهادات الذكي",
+  "description": "منصة احترافية متكاملة لإنشاء وتصميم وتحرير وتصدير الشهادات العربية والإنجليزية بجودة طباعية عالية مع محرر مرئي متقدم وأدوات ذكية وإنشاء جماعي.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
