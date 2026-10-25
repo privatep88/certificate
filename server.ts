@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -40,7 +41,7 @@ interface AuthDatabase {
   resetCodes: StoredResetCode[];
 }
 
-const DATA_DIR = path.join(__dirname, '.data');
+const DATA_DIR = path.join(os.tmpdir(), 'cert-studio-data');
 const AUTH_DB_PATH = path.join(DATA_DIR, 'auth-store.json');
 
 function ensureDefaultUser(db: AuthDatabase): AuthDatabase {

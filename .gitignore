@@ -2,6 +2,10 @@ node_modules/
 build/
 dist/
 coverage/
+.data/
+.aistudio/
+bun.lock
+*.tsbuildinfo
 .DS_Store
 *.log
 .env*
