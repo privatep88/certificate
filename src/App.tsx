@@ -27,7 +27,6 @@ import {
   Star,
   Trash2,
   Upload,
-  UserCheck,
   Users,
   X,
 } from 'lucide-react';
@@ -855,20 +854,14 @@ export function App() {
         {/* Account & Language Controls */}
         <div className="flex items-center gap-2 shrink-0">
           {currentUser ? (
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 px-2.5 py-1 bg-slate-100 rounded-lg whitespace-nowrap">
-                <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>{currentUser.fullName}</span>
-              </span>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>{isAr ? 'تسجيل الخروج' : 'Sign Out'}</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>{isAr ? 'تسجيل الخروج' : 'Sign Out'}</span>
+            </button>
           ) : (
             <button
               type="button"
