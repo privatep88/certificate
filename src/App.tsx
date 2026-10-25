@@ -119,7 +119,11 @@ export function App() {
   useEffect(() => {
     document.documentElement.dir = isAr ? 'rtl' : 'ltr';
     document.documentElement.lang = isAr ? 'ar' : 'en';
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+    try {
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+    } catch {
+      // ignore storage restrictions
+    }
   }, [isAr, settings]);
 
   // Authentication & Session State
@@ -136,26 +140,39 @@ export function App() {
   });
 
   const [showAuthView, setShowAuthView] = useState<boolean>(() => {
-    const token =
-      localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
-      sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-    return !token;
+    try {
+      const token =
+        localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
+        sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+      return !token;
+    } catch {
+      return true;
+    }
   });
 
   // Verify token against backend or local store on boot
   useEffect(() => {
-    const token =
-      localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
-      sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    let token: string | null = null;
+    try {
+      token =
+        localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
+        sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    } catch {
+      return;
+    }
     if (!token) return;
 
     verifySessionToken(token)
       .then((session) => {
         if (!session.authenticated || !session.user) {
-          localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-          localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
-          sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-          sessionStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+          try {
+            localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+            sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            sessionStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+          } catch {
+            // ignore
+          }
           setCurrentUser(null);
           setShowAuthView(true);
           return;
@@ -172,16 +189,20 @@ export function App() {
     token: string,
     rememberMe: boolean
   ) => {
-    if (rememberMe) {
-      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
-      localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
-      sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-      sessionStorage.removeItem(STORAGE_KEYS.AUTH_USER);
-    } else {
-      sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
-      sessionStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
-      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+    try {
+      if (rememberMe) {
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+        localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
+        sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+        sessionStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+      } else {
+        sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+        sessionStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
+        localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+      }
+    } catch {
+      // ignore storage errors
     }
     setCurrentUser(user);
     setShowAuthView(false);
@@ -190,16 +211,25 @@ export function App() {
   };
 
   const handleLogout = async () => {
-    const token =
-      localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
-      sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    let token: string | null = null;
+    try {
+      token =
+        localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
+        sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    } catch {
+      // ignore
+    }
     if (token) {
       await logoutSession(token);
     }
-    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
-    sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-    sessionStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+    try {
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+      sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      sessionStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+    } catch {
+      // ignore
+    }
     setCurrentUser(null);
     setShowAuthView(true);
   };
@@ -263,19 +293,35 @@ export function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SAVED_PROJECTS, JSON.stringify(savedProjects));
+    try {
+      localStorage.setItem(STORAGE_KEYS.SAVED_PROJECTS, JSON.stringify(savedProjects));
+    } catch {
+      // ignore
+    }
   }, [savedProjects]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.USER_TEMPLATES, JSON.stringify(userTemplates));
+    try {
+      localStorage.setItem(STORAGE_KEYS.USER_TEMPLATES, JSON.stringify(userTemplates));
+    } catch {
+      // ignore
+    }
   }, [userTemplates]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CUSTOM_CATEGORIES, JSON.stringify(customCategories));
+    try {
+      localStorage.setItem(STORAGE_KEYS.CUSTOM_CATEGORIES, JSON.stringify(customCategories));
+    } catch {
+      // ignore
+    }
   }, [customCategories]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.FAVORITE_IDS, JSON.stringify(favoriteIds));
+    try {
+      localStorage.setItem(STORAGE_KEYS.FAVORITE_IDS, JSON.stringify(favoriteIds));
+    } catch {
+      // ignore
+    }
   }, [favoriteIds]);
 
   // Active Design in Studio Editor + Undo/Redo History
@@ -325,7 +371,11 @@ export function App() {
   // Auto-save active draft
   useEffect(() => {
     if (!settings.autoSave) return;
-    localStorage.setItem(STORAGE_KEYS.ACTIVE_DRAFT, JSON.stringify(activeDesign));
+    try {
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_DRAFT, JSON.stringify(activeDesign));
+    } catch {
+      // ignore
+    }
     const now = new Date();
     setLastSavedAt(
       `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`

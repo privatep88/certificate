@@ -1,5 +1,6 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import fs from 'fs';
 import path from 'path';
 import {defineConfig} from 'vite';
 
@@ -8,7 +9,25 @@ export default defineConfig(() => {
     // Use relative base path './' by default so built assets in dist/ work seamlessly
     // on GitHub Pages subpaths (https://username.github.io/repo-name/) as well as root domains (/).
     base: process.env.VITE_BASE_PATH || './',
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'github-pages-spa-bundle',
+        closeBundle() {
+          try {
+            const distDir = path.resolve('.', 'dist');
+            const indexHtml = path.join(distDir, 'index.html');
+            if (fs.existsSync(indexHtml)) {
+              fs.copyFileSync(indexHtml, path.join(distDir, '404.html'));
+              fs.writeFileSync(path.join(distDir, '.nojekyll'), '# Disable Jekyll processing on GitHub Pages\n', 'utf-8');
+            }
+          } catch {
+            // ignore
+          }
+        },
+      },
+    ],
     resolve: {
       alias: {
         '@': path.resolve('.'),
@@ -19,6 +38,13 @@ export default defineConfig(() => {
       assetsDir: 'assets',
       sourcemap: false,
       emptyOutDir: true,
+      rollupOptions: {
+        output: {
+          entryFileNames: 'assets/app.js',
+          chunkFileNames: 'assets/[name].js',
+          assetFileNames: 'assets/[name].[ext]',
+        },
+      },
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.

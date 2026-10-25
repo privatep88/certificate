@@ -30,7 +30,7 @@ interface LocalAuthDatabase {
 
 const LOCAL_AUTH_DB_KEY = 'cert_studio_local_auth_db_v1';
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const API_BASE = (import.meta.env?.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 function apiUrl(path: string): string {
   if (!API_BASE) return path.startsWith('/') ? path : `/${path}`;

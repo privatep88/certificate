@@ -21,6 +21,42 @@
       </div>
     </noscript>
     <script type="module" src="./src/main.tsx"></script>
+    <script>
+      (function () {
+        function loadPrebuiltBundle() {
+          if (window.__CERT_STUDIO_MOUNTED__ || window.__CERT_STUDIO_FALLBACK_LOADED__) return;
+          if (document.querySelector('script[src*="@vite/client"]')) return;
+          if (document.querySelector('script[src*="./assets/app.js"]')) return;
+          window.__CERT_STUDIO_FALLBACK_LOADED__ = true;
+          var link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = './dist/assets/index.css';
+          document.head.appendChild(link);
+          var script = document.createElement('script');
+          script.type = 'module';
+          script.src = './dist/assets/app.js';
+          document.body.appendChild(script);
+        }
+        window.addEventListener(
+          'error',
+          function (e) {
+            var target = e && e.target;
+            if (target && target.tagName === 'SCRIPT' && target.src && target.src.indexOf('main.tsx') !== -1) {
+              loadPrebuiltBundle();
+            }
+          },
+          true
+        );
+        window.addEventListener('DOMContentLoaded', function () {
+          setTimeout(function () {
+            var root = document.getElementById('root');
+            if (root && root.childNodes.length === 0) {
+              loadPrebuiltBundle();
+            }
+          }, 450);
+        });
+      })();
+    </script>
   </body>
 </html>
 
