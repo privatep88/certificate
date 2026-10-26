@@ -9,6 +9,7 @@ import {
 } from '../types/certificate';
 import { ARTISTIC_STYLES, BUILTIN_LOGOS } from './stylesAndAssets';
 import { NEW_SAUDI_OFFICIAL_TEMPLATES } from './saudiCertificateAssets';
+import { ATTACHED_CERTIFICATE_TEMPLATES } from './attachedCertificateTemplates';
 
 interface TemplateSeed {
   id: string;
@@ -66,9 +67,7 @@ function buildTemplateFromSeed(seed: TemplateSeed): CertificateDesign {
   const dir = seed.language === 'ar' ? 'rtl' : 'ltr';
 
   const logoAsset = BUILTIN_LOGOS[seed.logoIndex % BUILTIN_LOGOS.length];
-  const defaultArabicRecipient = 'إلى الأستاذ / خالد أحمد عبدالله الهاشمي';
-  const effectiveRecipientName =
-    seed.language === 'ar' ? defaultArabicRecipient : seed.recipientName;
+  const effectiveRecipientName = seed.recipientName;
 
   const elements: CertificateElement[] = [];
 
@@ -856,63 +855,235 @@ function buildTemplateFromSeed(seed: TemplateSeed): CertificateDesign {
       }
     } else {
       // Classic Centered / Royal Header / Diplomatic Arch / Kids Festive Landscape Layouts
-      const isRoyalHeader = seed.layoutVariant === 'royal-header' || seed.layoutVariant === 'diplomatic-arch';
+      const isRoyalHeader = seed.layoutVariant === 'royal-header';
+      const isDiplomaticArch = seed.layoutVariant === 'diplomatic-arch';
       const isKidsFestive = seed.layoutVariant === 'kids-festive';
 
-      elements.push({
-        id: `${seed.id}-logo`,
-        type: 'image',
-        name: seed.language === 'ar' ? 'شعار الجهة' : 'Organization Logo',
-        src: logoAsset.src,
-        x: isRoyalHeader ? widthPx - 175 : centerX - 38,
-        y: isRoyalHeader ? 64 : 58,
-        width: 76,
-        height: 76,
-        rotation: 0,
-        opacity: 1,
-        locked: false,
-        visible: true,
-        zIndex: 5,
-        objectFit: 'contain',
-        borderRadius: 0,
-        isLogo: true,
-      });
+      if (isDiplomaticArch) {
+        // Diplomatic Arch Protocol: Centered Sovereign Logo + Flanking Laurel/Rosette Emblems + Top Protocol Date & Ref ID
+        elements.push({
+          id: `${seed.id}-logo`,
+          type: 'image',
+          name: seed.language === 'ar' ? 'شعار الجهة' : 'Organization Logo',
+          src: logoAsset.src,
+          x: centerX - 38,
+          y: 56,
+          width: 76,
+          height: 76,
+          rotation: 0,
+          opacity: 1,
+          locked: false,
+          visible: true,
+          zIndex: 5,
+          objectFit: 'contain',
+          borderRadius: 0,
+          isLogo: true,
+        });
 
-      elements.push({
-        id: `${seed.id}-orn-left`,
-        type: 'ornament',
-        name: seed.language === 'ar' ? 'وسام علوي رئيسي' : 'Primary Crest Ornament',
-        variant: seed.topOrnament,
-        color: style.accentColor,
-        secondaryColor: style.secondaryColor,
-        x: isRoyalHeader ? centerX - 36 : widthPx - 185,
-        y: isRoyalHeader ? 54 : 68,
-        width: isRoyalHeader ? 72 : 64,
-        height: isRoyalHeader ? 72 : 64,
-        rotation: 0,
-        opacity: 0.95,
-        locked: false,
-        visible: true,
-        zIndex: 4,
-      });
+        elements.push({
+          id: `${seed.id}-orn-left`,
+          type: 'ornament',
+          name: seed.language === 'ar' ? 'وسام بروتوكولي أيمن' : 'Right Protocol Emblem',
+          variant: seed.topOrnament,
+          color: style.accentColor,
+          secondaryColor: style.secondaryColor,
+          x: centerX + 58,
+          y: 66,
+          width: 56,
+          height: 56,
+          rotation: 0,
+          opacity: 0.92,
+          locked: false,
+          visible: true,
+          zIndex: 4,
+        });
 
-      elements.push({
-        id: `${seed.id}-orn-right`,
-        type: 'ornament',
-        name: seed.language === 'ar' ? 'وسام علوي ثانٍ' : 'Secondary Crest Ornament',
-        variant: isKidsFestive ? 'kids-star-smile' : isRoyalHeader ? 'laurel-wreath' : 'star-cluster',
-        color: style.accentColor,
-        secondaryColor: style.secondaryColor,
-        x: 115,
-        y: isRoyalHeader ? 64 : 72,
-        width: isRoyalHeader ? 70 : 60,
-        height: isRoyalHeader ? 70 : 60,
-        rotation: 0,
-        opacity: 0.9,
-        locked: false,
-        visible: true,
-        zIndex: 4,
-      });
+        elements.push({
+          id: `${seed.id}-orn-right`,
+          type: 'ornament',
+          name: seed.language === 'ar' ? 'وسام بروتوكولي أيسر' : 'Left Protocol Emblem',
+          variant: seed.topOrnament,
+          color: style.accentColor,
+          secondaryColor: style.secondaryColor,
+          x: centerX - 114,
+          y: 66,
+          width: 56,
+          height: 56,
+          rotation: 0,
+          opacity: 0.92,
+          locked: false,
+          visible: true,
+          zIndex: 4,
+        });
+      } else if (isRoyalHeader) {
+        // Royal Header: Right Logo, Left Seal/Emblem, Center Royal Crown above Title
+        elements.push({
+          id: `${seed.id}-logo`,
+          type: 'image',
+          name: seed.language === 'ar' ? 'شعار الجهة' : 'Organization Logo',
+          src: logoAsset.src,
+          x: widthPx - 170,
+          y: 62,
+          width: 78,
+          height: 78,
+          rotation: 0,
+          opacity: 1,
+          locked: false,
+          visible: true,
+          zIndex: 5,
+          objectFit: 'contain',
+          borderRadius: 0,
+          isLogo: true,
+        });
+
+        elements.push({
+          id: `${seed.id}-orn-left`,
+          type: 'ornament',
+          name: seed.language === 'ar' ? 'التاج / الوسام المركزي' : 'Central Royal Crest',
+          variant: seed.topOrnament,
+          color: style.accentColor,
+          secondaryColor: style.secondaryColor,
+          x: centerX - 38,
+          y: 54,
+          width: 76,
+          height: 76,
+          rotation: 0,
+          opacity: 0.96,
+          locked: false,
+          visible: true,
+          zIndex: 4,
+        });
+
+        elements.push({
+          id: `${seed.id}-orn-right`,
+          type: 'ornament',
+          name: seed.language === 'ar' ? 'وسام الشرف الجانبي' : 'Side Honor Medallion',
+          variant: 'laurel-wreath',
+          color: style.accentColor,
+          secondaryColor: style.secondaryColor,
+          x: 92,
+          y: 64,
+          width: 74,
+          height: 74,
+          rotation: 0,
+          opacity: 0.92,
+          locked: false,
+          visible: true,
+          zIndex: 4,
+        });
+      } else if (isKidsFestive) {
+        // Kids Festive Layout: Playful Stars, Trophy & Joyful Badges
+        elements.push({
+          id: `${seed.id}-logo`,
+          type: 'image',
+          name: seed.language === 'ar' ? 'شعار المدرسة / الروضة' : 'School Logo',
+          src: logoAsset.src,
+          x: centerX - 40,
+          y: 52,
+          width: 80,
+          height: 80,
+          rotation: 0,
+          opacity: 1,
+          locked: false,
+          visible: true,
+          zIndex: 5,
+          objectFit: 'contain',
+          borderRadius: 0,
+          isLogo: true,
+        });
+
+        elements.push({
+          id: `${seed.id}-orn-left`,
+          type: 'ornament',
+          name: seed.language === 'ar' ? 'نجمة التفوق اليمنى' : 'Right Festive Star',
+          variant: 'kids-star-smile',
+          color: style.accentColor,
+          secondaryColor: style.secondaryColor,
+          x: widthPx - 185,
+          y: 62,
+          width: 78,
+          height: 78,
+          rotation: -8,
+          opacity: 0.98,
+          locked: false,
+          visible: true,
+          zIndex: 4,
+        });
+
+        elements.push({
+          id: `${seed.id}-orn-right`,
+          type: 'ornament',
+          name: seed.language === 'ar' ? 'كأس التفوق الأيسر' : 'Left Trophy',
+          variant: 'trophy-cup',
+          color: style.accentColor,
+          secondaryColor: style.secondaryColor,
+          x: 107,
+          y: 62,
+          width: 78,
+          height: 78,
+          rotation: 8,
+          opacity: 0.98,
+          locked: false,
+          visible: true,
+          zIndex: 4,
+        });
+      } else {
+        // Classic Centered Layout
+        elements.push({
+          id: `${seed.id}-logo`,
+          type: 'image',
+          name: seed.language === 'ar' ? 'شعار الجهة' : 'Organization Logo',
+          src: logoAsset.src,
+          x: centerX - 38,
+          y: 58,
+          width: 76,
+          height: 76,
+          rotation: 0,
+          opacity: 1,
+          locked: false,
+          visible: true,
+          zIndex: 5,
+          objectFit: 'contain',
+          borderRadius: 0,
+          isLogo: true,
+        });
+
+        elements.push({
+          id: `${seed.id}-orn-left`,
+          type: 'ornament',
+          name: seed.language === 'ar' ? 'وسام علوي أيمن' : 'Primary Crest Ornament',
+          variant: seed.topOrnament,
+          color: style.accentColor,
+          secondaryColor: style.secondaryColor,
+          x: widthPx - 185,
+          y: 68,
+          width: 64,
+          height: 64,
+          rotation: 0,
+          opacity: 0.95,
+          locked: false,
+          visible: true,
+          zIndex: 4,
+        });
+
+        elements.push({
+          id: `${seed.id}-orn-right`,
+          type: 'ornament',
+          name: seed.language === 'ar' ? 'وسام علوي أيسر' : 'Secondary Crest Ornament',
+          variant: 'star-cluster',
+          color: style.accentColor,
+          secondaryColor: style.secondaryColor,
+          x: 115,
+          y: 72,
+          width: 60,
+          height: 60,
+          rotation: 0,
+          opacity: 0.9,
+          locked: false,
+          visible: true,
+          zIndex: 4,
+        });
+      }
 
       // Organization Name
       elements.push({
@@ -949,8 +1120,10 @@ function buildTemplateFromSeed(seed: TemplateSeed): CertificateDesign {
         fieldRole: 'title',
         name: seed.language === 'ar' ? 'العنوان الرئيسي' : 'Main Title',
         content:
-          seed.layoutVariant === 'diplomatic-arch' && seed.language === 'ar' && !seed.title.includes('﴿')
+          isDiplomaticArch && seed.language === 'ar' && !seed.title.includes('﴿')
             ? `❖  ${seed.title}  ❖`
+            : isRoyalHeader && seed.language === 'ar' && !seed.title.includes('﴿')
+            ? `﴿  ${seed.title}  ﴾`
             : seed.title,
         fontFamily: seed.titleFont,
         fontSize: 44,
@@ -1082,7 +1255,7 @@ function buildTemplateFromSeed(seed: TemplateSeed): CertificateDesign {
         id: `${seed.id}-div-name`,
         type: 'divider',
         name: seed.language === 'ar' ? 'خط تحت الاسم' : 'Name Underline',
-        variant: isRoyalHeader ? 'royal-flourish' : 'minimal-taper',
+        variant: isRoyalHeader ? 'royal-flourish' : isDiplomaticArch ? 'islamic-knot' : 'minimal-taper',
         color: style.accentColor,
         thickness: 2,
         x: centerX - 190,
@@ -1154,7 +1327,7 @@ function buildTemplateFromSeed(seed: TemplateSeed): CertificateDesign {
         });
       }
 
-      // Issue Date & Certificate Reference Number — In Royal/Diplomatic layouts, placed in top protocol header corners; in Classic/Festive, aligned cleanly over the signature columns
+      // Issue Date & Certificate Reference Number — In Diplomatic Arch layouts, placed in top protocol header corners; otherwise aligned cleanly over the signature columns
       elements.push({
         id: `${seed.id}-date`,
         type: 'text',
@@ -1162,18 +1335,18 @@ function buildTemplateFromSeed(seed: TemplateSeed): CertificateDesign {
         name: seed.language === 'ar' ? 'تاريخ الإصدار' : 'Issue Date',
         content: seed.issueDate,
         fontFamily: seed.bodyFont,
-        fontSize: 14,
+        fontSize: isDiplomaticArch ? 13 : 14,
         fontWeight: 700,
         italic: false,
         color: style.textColor,
-        align: 'center',
+        align: isDiplomaticArch ? 'right' : 'center',
         direction: dir,
         lineHeight: 1.4,
         letterSpacing: 0,
         textShadow: false,
-        x: widthPx - 340,
-        y: 552,
-        width: 230,
+        x: isDiplomaticArch ? widthPx - 305 : widthPx - 340,
+        y: isDiplomaticArch ? 72 : 552,
+        width: isDiplomaticArch ? 220 : 230,
         height: 26,
         rotation: 0,
         opacity: 0.9,
@@ -1189,18 +1362,18 @@ function buildTemplateFromSeed(seed: TemplateSeed): CertificateDesign {
         name: seed.language === 'ar' ? 'رقم الشهادة' : 'Certificate ID',
         content: seed.certificateId,
         fontFamily: seed.bodyFont,
-        fontSize: 14,
+        fontSize: isDiplomaticArch ? 13 : 14,
         fontWeight: 700,
         italic: false,
         color: style.secondaryColor,
-        align: 'center',
+        align: isDiplomaticArch ? 'left' : 'center',
         direction: dir,
         lineHeight: 1.4,
         letterSpacing: 0,
         textShadow: false,
-        x: 110,
-        y: 552,
-        width: 230,
+        x: isDiplomaticArch ? 85 : 110,
+        y: isDiplomaticArch ? 72 : 552,
+        width: isDiplomaticArch ? 220 : 230,
         height: 26,
         rotation: 0,
         opacity: 0.9,
@@ -1279,14 +1452,14 @@ function buildTemplateFromSeed(seed: TemplateSeed): CertificateDesign {
       }
     }
   } else {
-    // Portrait Layout (794 x 1123)
+    // Portrait Layout (794 x 1123) — Enriched Vertical Crest Composition
     elements.push({
       id: `${seed.id}-logo`,
       type: 'image',
       name: 'شعار الجهة',
       src: logoAsset.src,
       x: centerX - 45,
-      y: 85,
+      y: 82,
       width: 90,
       height: 90,
       rotation: 0,
@@ -1297,6 +1470,42 @@ function buildTemplateFromSeed(seed: TemplateSeed): CertificateDesign {
       objectFit: 'contain',
       borderRadius: 0,
       isLogo: true,
+    });
+
+    elements.push({
+      id: `${seed.id}-orn-top-r`,
+      type: 'ornament',
+      name: 'وسام علوي أيمن',
+      variant: seed.topOrnament,
+      color: style.accentColor,
+      secondaryColor: style.secondaryColor,
+      x: widthPx - 155,
+      y: 88,
+      width: 68,
+      height: 68,
+      rotation: 0,
+      opacity: 0.92,
+      locked: false,
+      visible: true,
+      zIndex: 4,
+    });
+
+    elements.push({
+      id: `${seed.id}-orn-top-l`,
+      type: 'ornament',
+      name: 'وسام علوي أيسر',
+      variant: seed.topOrnament,
+      color: style.accentColor,
+      secondaryColor: style.secondaryColor,
+      x: 87,
+      y: 88,
+      width: 68,
+      height: 68,
+      rotation: 0,
+      opacity: 0.92,
+      locked: false,
+      visible: true,
+      zIndex: 4,
     });
 
     elements.push({
@@ -1683,8 +1892,8 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
     organization: 'مؤسسة الريادة الوطنية للتطوير والابتكار',
     title: 'شهادة شكر وتقدير',
     subtitle: 'عرفانًا بالعطاء المخلص والجهود الاستثنائية',
-    intro: 'تتقدم مؤسسة الريادة الوطنية بخالص الشكر والتقدير',
-    recipientName: 'إلى الأستاذ / خالد أحمد عبدالله الهاشمي',
+    intro: 'تتقدم مؤسسة الريادة الوطنية بخالص الشكر والتقدير إلى:',
+    recipientName: 'الأستاذ / محمد بن عبد الله المنصور',
     body: 'تقديرًا لجهوده المتميزة وعطائه المثمر ومساهمته الفاعلة في إنجاح البرامج الاستراتيجية للعام 2026م، متمنين له دوام التوفيق والنجاح ومزيدًا من الإنجازات.',
     issueDate: 'التاريخ: 25 / 10 / 2026 م',
     certificateId: 'رقم الشهادة: CS-2026-101',
@@ -3118,6 +3327,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
 ];
 
 export const INITIAL_TEMPLATES: CertificateDesign[] = [
+  ...ATTACHED_CERTIFICATE_TEMPLATES,
   ...NEW_SAUDI_OFFICIAL_TEMPLATES,
   ...TEMPLATE_SEEDS.map(buildTemplateFromSeed),
 ];
@@ -3245,7 +3455,7 @@ export function createBlankCertificate(orientation: PageOrientation = 'landscape
         type: 'text',
         fieldRole: 'recipientName',
         name: language === 'ar' ? 'اسم المستفيد' : 'Recipient Name',
-        content: language === 'ar' ? 'إلى الأستاذ / خالد أحمد عبدالله الهاشمي' : 'Recipient Full Name',
+        content: language === 'ar' ? 'الأستاذ / محمد بن عبد الله المنصور' : 'Recipient Full Name',
         fontFamily: language === 'ar' ? 'Aref Ruqaa' : 'Playfair Display',
         fontSize: 38,
         fontWeight: 700,

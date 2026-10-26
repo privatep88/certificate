@@ -173,7 +173,19 @@ export type OrnamentVariant =
   | 'tughra-monogram'
   | 'thuluth-banner'
   | 'diwani-cartouche'
-  | 'kufic-medallion';
+  | 'kufic-medallion'
+  | 'quran-rehal'
+  | 'grad-cap-book-stars'
+  | 'charcoal-gold-medal'
+  | 'navy-torch-book-medal'
+  | 'stepped-gold-corner'
+  | 'royal-arabesque-crest'
+  | 'title-sparkle-rays'
+  | 'school-doodle-trophy'
+  | 'school-doodle-books'
+  | 'school-doodle-backpack'
+  | 'school-doodle-globe'
+  | 'school-doodle-pencils';
 
 export interface OrnamentCertificateElement extends BaseCertificateElement {
   type: 'ornament';
@@ -203,7 +215,10 @@ export type SealVariant =
   | 'official-circular-stamp'
   | 'academic-crest'
   | 'excellence-star-seal'
-  | 'modern-verified-badge';
+  | 'modern-verified-badge'
+  | 'ideal-student-medal'
+  | 'anta-mumayaz-medal'
+  | 'navy-gold-future-seal';
 
 export interface SealCertificateElement extends BaseCertificateElement {
   type: 'seal';

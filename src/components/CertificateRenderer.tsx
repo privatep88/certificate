@@ -17,8 +17,13 @@ interface CertificateRendererProps {
   selectedElementId?: string | null;
   onSelectElement?: (id: string | null) => void;
   onStartDragElement?: (e: React.MouseEvent | React.TouchEvent, element: CertificateElement) => void;
-  onStartResizeElement?: (e: React.MouseEvent | React.TouchEvent, element: CertificateElement, handle: 'nw' | 'ne' | 'sw' | 'se') => void;
+  onStartResizeElement?: (
+    e: React.MouseEvent | React.TouchEvent,
+    element: CertificateElement,
+    handle: 'nw' | 'ne' | 'sw' | 'se' | 'e' | 'w'
+  ) => void;
   onDoubleClickText?: (element: TextCertificateElement) => void;
+  onDoubleClickElement?: (element: CertificateElement) => void;
   showGrid?: boolean;
   snapLines?: { x?: number; y?: number };
   exportMode?: boolean;
@@ -59,6 +64,7 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
   onStartDragElement,
   onStartResizeElement,
   onDoubleClickText,
+  onDoubleClickElement,
   showGrid = false,
   snapLines,
   exportMode = false,
@@ -205,6 +211,9 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
   };
 
   const renderCornerOrnaments = (inset: number, color: string, accent: string) => {
+    const ornamentStyle = pageConfig.cornerOrnament || 'geometric';
+    if (ornamentStyle === 'none') return null;
+
     const cornerSize = 68;
     const corners = [
       { x: inset, y: inset, sx: 1, sy: 1 },
@@ -215,18 +224,72 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
 
     return corners.map((c, idx) => (
       <g key={idx} transform={`translate(${c.x}, ${c.y}) scale(${c.sx}, ${c.sy})`}>
-        <path
-          d={`M 0 0 L ${cornerSize} 0 L ${cornerSize - 12} 12 L 12 12 L 12 ${cornerSize - 12} L 0 ${cornerSize} Z`}
-          fill={color}
-        />
-        <path
-          d={`M 18 18 L ${cornerSize - 8} 18 M 18 18 L 18 ${cornerSize - 8}`}
-          stroke={accent}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-        <circle cx="28" cy="28" r="4.5" fill={accent} />
-        <polygon points="6,6 16,6 6,16" fill={accent} />
+        {ornamentStyle === 'arabesque' && (
+          <>
+            <path d="M 0 0 L 64 0 L 52 12 L 16 12 L 12 16 L 12 52 L 0 64 Z" fill={color} />
+            <path d="M 18 18 L 48 18 L 36 30 L 30 36 L 18 48 Z" fill="none" stroke={accent} strokeWidth="2" />
+            <polygon points="26,14 34,22 26,30 18,22" fill={accent} />
+            <circle cx="10" cy="10" r="3.5" fill={accent} />
+          </>
+        )}
+        {ornamentStyle === 'floral' && (
+          <>
+            <path d="M 0 0 L 62 0 C 44 10 24 14 14 24 C 14 34 10 44 0 62 Z" fill={color} />
+            <path d="M 14 14 Q 36 14 48 26 Q 28 26 20 34 Q 26 28 14 48 Q 14 36 14 14 Z" fill={accent} />
+            <circle cx="28" cy="28" r="4" fill={color} stroke={accent} strokeWidth="1.5" />
+          </>
+        )}
+        {ornamentStyle === 'classic-scroll' && (
+          <>
+            <path
+              d="M 2 2 L 66 2 M 2 2 L 2 66"
+              stroke={color}
+              strokeWidth="5"
+              strokeLinecap="round"
+            />
+            <path
+              d="M 12 12 L 54 12 C 44 12 40 22 46 26 C 50 28 54 24 50 20 M 12 12 L 12 54 C 12 44 22 40 26 46 C 28 50 24 54 20 50"
+              fill="none"
+              stroke={accent}
+              strokeWidth="2.2"
+              strokeLinecap="round"
+            />
+            <circle cx="12" cy="12" r="4" fill={accent} />
+          </>
+        )}
+        {ornamentStyle === 'stars' && (
+          <>
+            <path d="M 0 0 L 58 0 L 48 10 L 10 10 L 10 48 L 0 58 Z" fill={color} />
+            <polygon points="26,14 29,22 37,22 31,27 33,35 26,30 19,35 21,27 15,22 23,22" fill={accent} />
+            <circle cx="44" cy="18" r="3" fill={accent} />
+            <circle cx="18" cy="44" r="3" fill={accent} />
+          </>
+        )}
+        {ornamentStyle === 'royal-crest' && (
+          <>
+            <path d="M 0 0 L 72 0 L 58 14 L 14 14 L 14 58 L 0 72 Z" fill={color} />
+            <polygon points="6,6 28,6 22,22 6,28" fill={accent} />
+            <polygon points="10,10 22,10 18,18 10,22" fill={color} />
+            <path d="M 22 22 L 54 22 M 22 22 L 22 54" stroke={accent} strokeWidth="2.5" />
+            <circle cx="32" cy="32" r="5" fill={accent} />
+          </>
+        )}
+        {ornamentStyle === 'geometric' && (
+          <>
+            <path
+              d={`M 0 0 L ${cornerSize} 0 L ${cornerSize - 12} 12 L 12 12 L 12 ${cornerSize - 12} L 0 ${cornerSize} Z`}
+              fill={color}
+            />
+            <path
+              d={`M 18 18 L ${cornerSize - 8} 18 M 18 18 L 18 ${cornerSize - 8}`}
+              stroke={accent}
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
+            <circle cx="28" cy="28" r="4.5" fill={accent} />
+            <polygon points="6,6 16,6 6,16" fill={accent} />
+          </>
+        )}
       </g>
     ));
   };
@@ -235,8 +298,14 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
     const primary = pageConfig.frameColor || '#0B192C';
     const secondary = pageConfig.frameSecondaryColor || '#B8860B';
     const accent = pageConfig.frameAccentColor || '#D4AF37';
-    const bw = pageConfig.borderThickness || 3;
+    const bw = pageConfig.borderThickness ?? 3;
     const ft = pageConfig.frameType;
+    const showStandardBorders =
+      bw > 0 &&
+      ft !== 'minimal-clean' &&
+      ft !== 'corporate-sidebar-right' &&
+      ft !== 'corporate-sidebar-left' &&
+      ft !== 'swiss-grid-executive';
 
     // Base outer & inner architectural frames + specialized decorative motifs per style
     return (
@@ -496,7 +565,7 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
         )}
 
         {/* Primary Outer Border */}
-        {ft !== 'corporate-sidebar-right' && ft !== 'corporate-sidebar-left' && ft !== 'swiss-grid-executive' && (
+        {showStandardBorders && (
           <rect
             x="32"
             y="32"
@@ -509,7 +578,7 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
         )}
 
         {/* Secondary Middle Accent Border */}
-        {ft !== 'corporate-sidebar-right' && ft !== 'corporate-sidebar-left' && ft !== 'swiss-grid-executive' && (
+        {showStandardBorders && (
           <rect
             x="42"
             y="42"
@@ -517,12 +586,12 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
             height={heightPx - 84}
             fill="none"
             stroke={accent}
-            strokeWidth={Math.max(1.5, bw - 0.5)}
+            strokeWidth={Math.max(1.2, bw - 0.5)}
           />
         )}
 
         {/* Triple Inner Hairline Border */}
-        {ft !== 'minimal-clean' && ft !== 'swiss-grid-executive' && ft !== 'corporate-sidebar-right' && ft !== 'corporate-sidebar-left' && (
+        {showStandardBorders && (
           <rect
             x="49"
             y="49"
@@ -540,11 +609,8 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
         )}
 
         {/* Corner Filigree Ornaments */}
-        {ft !== 'minimal-clean' &&
+        {showStandardBorders &&
           ft !== 'kids-playful' &&
-          ft !== 'swiss-grid-executive' &&
-          ft !== 'corporate-sidebar-right' &&
-          ft !== 'corporate-sidebar-left' &&
           ft !== 'iso-accreditation' &&
           ft !== 'banking-guilloche' &&
           renderCornerOrnaments(32, primary, accent)}
@@ -790,6 +856,295 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
             </g>
           </svg>
         );
+      case 'quran-rehal':
+        return (
+          <svg viewBox="0 0 220 175" width={el.width} height={el.height}>
+            {/* Carved Wooden Rehal (X-Stand) */}
+            <g stroke="#26282B" strokeWidth="1.8" strokeLinejoin="round">
+              {/* Left leg going down-right */}
+              <path d="M 30,66 L 188,154 L 182,164 L 146,146 L 142,135 L 128,128 L 122,136 L 22,82 Z" fill={c2 || '#4A4D52'} />
+              <path d="M 36,74 L 178,152" stroke="#7A7E85" strokeWidth="1.5" fill="none" />
+              {/* Right leg going down-left */}
+              <path d="M 190,66 L 32,154 L 38,164 L 74,146 L 78,135 L 92,128 L 98,136 L 198,82 Z" fill="#373A3E" />
+              <path d="M 184,74 L 42,152" stroke="#686C73" strokeWidth="1.5" fill="none" />
+              {/* Decorative cutout notches on stand legs */}
+              <circle cx="66" cy="134" r="4.5" fill="#FBFBFB" stroke="none" />
+              <circle cx="154" cy="134" r="4.5" fill="#FBFBFB" stroke="none" />
+            </g>
+            {/* Open Mushaf Cover */}
+            <path
+              d="M 110,108 L 30,64 L 54,22 L 110,58 L 166,22 L 190,64 Z"
+              fill="#323539"
+              stroke="#1E2022"
+              strokeWidth="2"
+              strokeLinejoin="round"
+            />
+            {/* Stacked Pages Edge Depth */}
+            <path
+              d="M 110,102 L 36,61 L 56,24 L 110,56 L 164,24 L 184,61 Z"
+              fill="#DFDDD4"
+              stroke="#5A5D62"
+              strokeWidth="1.4"
+            />
+            {/* Open Left & Right Cream Pages */}
+            <path
+              d="M 110,95 C 86,78 58,64 42,56 L 60,20 C 78,30 96,44 110,56 Z"
+              fill={c1 || '#F5F2E6'}
+              stroke="#686B70"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M 110,95 C 134,78 162,64 178,56 L 160,20 C 142,30 124,44 110,56 Z"
+              fill={c1 || '#F5F2E6'}
+              stroke="#686B70"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+            {/* Inner Page Frame Lines */}
+            <path
+              d="M 105,84 C 86,70 66,60 51,52 L 64,27 C 80,35 94,46 105,56 Z"
+              fill="none"
+              stroke="#8C8F94"
+              strokeWidth="1"
+            />
+            <path
+              d="M 115,84 C 134,70 154,60 169,52 L 156,27 C 140,35 126,46 115,56 Z"
+              fill="none"
+              stroke="#8C8F94"
+              strokeWidth="1"
+            />
+            {/* Center Spine & Hanging Bookmark Ribbon */}
+            <line x1="110" y1="54" x2="110" y2="104" stroke="#373A3E" strokeWidth="2.5" />
+            <path
+              d="M 110,98 Q 108,128 104,158 M 112,98 Q 116,126 113,152"
+              fill="none"
+              stroke="#373A3E"
+              strokeWidth="3.2"
+              strokeLinecap="round"
+            />
+          </svg>
+        );
+      case 'grad-cap-book-stars':
+        return (
+          <svg viewBox="0 0 180 130" width={el.width} height={el.height}>
+            {/* Three Stars Above */}
+            <polygon
+              points="90,8 94,19 106,19 96,26 100,37 90,30 80,37 84,26 74,19 86,19"
+              fill={c1}
+            />
+            <polygon
+              points="44,34 47,41 55,41 48,46 51,53 44,48 37,53 40,46 33,41 41,41"
+              fill={c1}
+            />
+            <polygon
+              points="136,34 139,41 147,41 140,46 143,53 136,48 129,53 132,46 125,41 133,41"
+              fill={c1}
+            />
+            {/* Academic Mortarboard Cap */}
+            <polygon points="90,42 132,58 90,74 48,58" fill={c1} />
+            <path d="M 68,66 V 82 C 68,90 112,90 112,82 V 66 L 90,76 Z" fill={c2 || '#D4AF37'} />
+            {/* Tassel on Right */}
+            <path d="M 122,62 V 84" stroke={c1} strokeWidth="3" strokeLinecap="round" />
+            <polygon points="122,82 118,92 126,92" fill={c1} />
+            {/* Open Book Pages at Base */}
+            <path
+              d="M 90,114 Q 60,96 24,104 L 30,94 Q 62,88 90,106 Q 118,88 150,94 L 156,104 Q 120,96 90,114 Z"
+              fill={c1}
+            />
+            <path
+              d="M 90,120 Q 58,104 18,112 L 22,106 Q 58,98 90,114 Q 122,98 158,106 L 162,112 Q 122,104 90,120 Z"
+              fill={c2 || '#D4AF37'}
+            />
+            <path
+              d="M 90,106 Q 64,90 36,92 M 90,106 Q 116,90 144,92"
+              fill="none"
+              stroke={c1}
+              strokeWidth="2.5"
+            />
+          </svg>
+        );
+      case 'charcoal-gold-medal':
+        return (
+          <svg viewBox="0 0 220 300" width={el.width} height={el.height}>
+            <defs>
+              <linearGradient id={`cg-medal-${el.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#FCE79C" />
+                <stop offset="35%" stopColor={c1 || '#D4AF37'} />
+                <stop offset="70%" stopColor="#9A6F1A" />
+                <stop offset="100%" stopColor="#F5D061" />
+              </linearGradient>
+            </defs>
+            {/* Bottom Left & Right Gold Ribbons */}
+            <polygon points="68,175 34,270 68,248 84,284 108,185" fill={`url(#cg-medal-${el.id})`} stroke="#9A6F1A" strokeWidth="1.5" />
+            <polygon points="152,175 186,270 152,248 136,284 112,185" fill={`url(#cg-medal-${el.id})`} stroke="#9A6F1A" strokeWidth="1.5" />
+            {/* Scalloped Rosette Outer Gold Rim */}
+            <polygon
+              points="110,12 126,22 145,17 156,33 176,36 180,55 198,66 194,85 206,102 195,119 200,138 184,151 182,171 163,176 153,194 134,191 118,204 102,194 84,203 70,189 50,191 42,173 23,167 23,147 9,134 17,115 9,97 23,82 23,62 41,54 48,35 67,34 80,18 98,23"
+              fill={`url(#cg-medal-${el.id})`}
+              stroke="#8A6114"
+              strokeWidth="2"
+            />
+            {/* Inner Gold Ring & Dark Charcoal Core */}
+            <circle cx="110" cy="108" r="76" fill={c2 || '#3E3E3E'} stroke={`url(#cg-medal-${el.id})`} strokeWidth="5" />
+            <circle cx="110" cy="108" r="64" fill="none" stroke={`url(#cg-medal-${el.id})`} strokeWidth="2" />
+            {/* Detailed Multi-Leaf Gold Laurel Wreath */}
+            <g fill={`url(#cg-medal-${el.id})`}>
+              <path d="M 110,156 C 72,152 54,122 62,78 C 66,112 82,140 110,148 Z" />
+              <path d="M 110,156 C 148,152 166,122 158,78 C 154,112 138,140 110,148 Z" />
+              {/* Left Laurel Leaves */}
+              <ellipse cx="64" cy="118" rx="11" ry="4.5" transform="rotate(35 64 118)" />
+              <ellipse cx="60" cy="102" rx="11" ry="4.5" transform="rotate(55 60 102)" />
+              <ellipse cx="62" cy="86" rx="10" ry="4" transform="rotate(72 62 86)" />
+              <ellipse cx="74" cy="134" rx="11" ry="4.5" transform="rotate(18 74 134)" />
+              <ellipse cx="90" cy="146" rx="11" ry="4.5" transform="rotate(5 90 146)" />
+              {/* Right Laurel Leaves */}
+              <ellipse cx="156" cy="118" rx="11" ry="4.5" transform="rotate(-35 156 118)" />
+              <ellipse cx="160" cy="102" rx="11" ry="4.5" transform="rotate(-55 160 102)" />
+              <ellipse cx="158" cy="86" rx="10" ry="4" transform="rotate(-72 158 86)" />
+              <ellipse cx="146" cy="134" rx="11" ry="4.5" transform="rotate(-18 146 134)" />
+              <ellipse cx="130" cy="146" rx="11" ry="4.5" transform="rotate(-5 130 146)" />
+              {/* Stem Cross at Bottom of Wreath */}
+              <path d="M 96,158 L 110,148 L 124,158" stroke={`url(#cg-medal-${el.id})`} strokeWidth="3" fill="none" strokeLinecap="round" />
+            </g>
+          </svg>
+        );
+      case 'navy-torch-book-medal':
+        return (
+          <svg viewBox="0 0 220 300" width={el.width} height={el.height}>
+            <defs>
+              <linearGradient id={`ntb-gold-${el.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#FCE79C" />
+                <stop offset="50%" stopColor={c1 || '#D4AF37'} />
+                <stop offset="100%" stopColor="#9A6F1A" />
+              </linearGradient>
+            </defs>
+            {/* Navy Ribbon Tails with Gold Edges */}
+            <polygon points="62,172 30,272 68,252 90,285 106,182" fill={c2 || '#0B1D3A'} stroke={`url(#ntb-gold-${el.id})`} strokeWidth="4" />
+            <polygon points="158,172 190,272 152,252 130,285 114,182" fill={c2 || '#0B1D3A'} stroke={`url(#ntb-gold-${el.id})`} strokeWidth="4" />
+            {/* Scalloped Gold Medal Disc */}
+            <polygon
+              points="110,12 126,20 145,16 156,31 176,35 180,53 198,65 194,84 206,101 195,118 200,137 184,150 182,170 163,175 153,193 134,190 118,203 102,193 84,202 70,188 50,190 42,172 23,166 23,146 9,133 17,114 9,96 23,81 23,61 41,53 48,34 67,33 80,17 98,22"
+              fill={`url(#ntb-gold-${el.id})`}
+              stroke="#8A6114"
+              strokeWidth="2"
+            />
+            {/* Deep Navy Inner Circle */}
+            <circle cx="110" cy="108" r="76" fill={c2 || '#0B1D3A'} stroke={`url(#ntb-gold-${el.id})`} strokeWidth="4" />
+            <circle cx="110" cy="108" r="68" fill="none" stroke={`url(#ntb-gold-${el.id})`} strokeWidth="1.5" />
+            {/* Gold Laurel Wreath */}
+            <path d="M 110,164 C 66,156 50,116 62,68" fill="none" stroke={`url(#ntb-gold-${el.id})`} strokeWidth="5" strokeDasharray="10 4" strokeLinecap="round" />
+            <path d="M 110,164 C 154,156 170,116 158,68" fill="none" stroke={`url(#ntb-gold-${el.id})`} strokeWidth="5" strokeDasharray="10 4" strokeLinecap="round" />
+            {/* Top 3 Stars */}
+            <polygon points="110,46 113,53 120,53 114,57 116,64 110,60 104,64 106,57 100,53 107,53" fill={`url(#ntb-gold-${el.id})`} />
+            <circle cx="88" cy="58" r="3.5" fill={`url(#ntb-gold-${el.id})`} />
+            <circle cx="132" cy="58" r="3.5" fill={`url(#ntb-gold-${el.id})`} />
+            {/* Torch Flame & Handle */}
+            <path d="M 110,64 C 120,76 118,88 110,94 C 102,88 100,76 110,64 Z" fill={`url(#ntb-gold-${el.id})`} />
+            <rect x="106" y="94" width="8" height="16" rx="2" fill={`url(#ntb-gold-${el.id})`} />
+            {/* Open Book in Center */}
+            <path d="M 108,108 L 78,102 V 134 L 108,140 Z" fill={`url(#ntb-gold-${el.id})`} />
+            <path d="M 112,108 L 142,102 V 134 L 112,140 Z" fill={`url(#ntb-gold-${el.id})`} />
+            <path d="M 76,138 Q 110,146 144,138" fill="none" stroke={`url(#ntb-gold-${el.id})`} strokeWidth="3" />
+          </svg>
+        );
+      case 'stepped-gold-corner':
+        return (
+          <svg viewBox="0 0 120 120" width={el.width} height={el.height}>
+            <polyline points="8,12 108,12 108,112" fill="none" stroke={c1 || '#E5A93C'} strokeWidth="2.5" />
+            <polyline points="18,22 98,22 98,102" fill="none" stroke={c1 || '#E5A93C'} strokeWidth="2.5" />
+            <polyline points="28,32 88,32 88,92" fill="none" stroke={c1 || '#E5A93C'} strokeWidth="2.5" />
+          </svg>
+        );
+      case 'royal-arabesque-crest':
+        return (
+          <svg viewBox="0 0 200 70" width={el.width} height={el.height}>
+            <g fill="none" stroke={c1 || '#C5A059'} strokeWidth="2.2" strokeLinecap="round">
+              {/* Central Palmette & Diamond */}
+              <polygon points="100,8 112,35 100,62 88,35" fill={c1 || '#C5A059'} opacity="0.25" />
+              <polygon points="100,14 109,35 100,56 91,35" stroke={c1 || '#C5A059'} strokeWidth="2" />
+              {/* Symmetrical Arabesque Spirals */}
+              <path d="M 88,35 C 72,12 48,14 36,28 C 28,38 38,50 50,44 C 58,40 56,28 46,28" />
+              <path d="M 112,35 C 128,12 152,14 164,28 C 172,38 162,50 150,44 C 142,40 144,28 154,28" />
+              <path d="M 88,35 C 70,54 44,54 14,35" />
+              <path d="M 112,35 C 130,54 156,54 186,35" />
+              <circle cx="10" cy="35" r="3" fill={c1 || '#C5A059'} />
+              <circle cx="190" cy="35" r="3" fill={c1 || '#C5A059'} />
+            </g>
+          </svg>
+        );
+      case 'title-sparkle-rays':
+        return (
+          <svg viewBox="0 0 60 60" width={el.width} height={el.height}>
+            <line x1="18" y1="26" x2="8" y2="8" stroke={c1 || '#0B556C'} strokeWidth="5" strokeLinecap="round" />
+            <line x1="28" y1="34" x2="48" y2="18" stroke={c2 || '#EAB308'} strokeWidth="5" strokeLinecap="round" />
+            <line x1="28" y1="46" x2="52" y2="46" stroke={c1 || '#0B556C'} strokeWidth="4.5" strokeLinecap="round" />
+          </svg>
+        );
+      case 'school-doodle-trophy':
+        return (
+          <svg viewBox="0 0 120 120" width={el.width} height={el.height}>
+            <g fill="none" stroke={c1 || '#CBD5E1'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M 32,20 H 88 V 48 C 88,72 60,80 60,80 C 60,80 32,72 32,48 Z" />
+              <path d="M 32,28 H 16 C 16,48 24,56 34,56" />
+              <path d="M 88,28 H 104 C 104,48 96,56 86,56" />
+              <path d="M 52,80 V 96 M 68,80 V 96" />
+              <rect x="36" y="96" width="48" height="10" rx="3" />
+            </g>
+          </svg>
+        );
+      case 'school-doodle-books':
+        return (
+          <svg viewBox="0 0 130 100" width={el.width} height={el.height}>
+            <g fill="none" stroke={c1 || '#CBD5E1'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              {/* Top Book */}
+              <polygon points="26,24 84,14 112,26 54,36" />
+              <path d="M 26,24 V 38 L 54,50 L 112,40 V 26" />
+              {/* Middle Book */}
+              <path d="M 20,46 L 50,58 L 116,46 L 116,60 L 50,72 L 20,60 Z" />
+              {/* Bottom Book */}
+              <path d="M 16,66 L 54,80 L 118,66 L 118,82 L 54,96 L 16,82 Z" />
+            </g>
+          </svg>
+        );
+      case 'school-doodle-backpack':
+        return (
+          <svg viewBox="0 0 120 140" width={el.width} height={el.height}>
+            <g fill="none" stroke={c1 || '#CBD5E1'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M 46,24 C 46,12 74,12 74,24" />
+              <rect x="24" y="24" width="72" height="96" rx="26" />
+              <rect x="34" y="68" width="52" height="40" rx="10" />
+              <path d="M 34,82 H 86" />
+              <rect x="46" y="88" width="10" height="12" rx="2" />
+              <path d="M 14,64 H 24 V 104 H 14 Z M 96,64 H 106 V 104 H 96 Z" />
+            </g>
+          </svg>
+        );
+      case 'school-doodle-globe':
+        return (
+          <svg viewBox="0 0 120 140" width={el.width} height={el.height}>
+            <g fill="none" stroke={c1 || '#CBD5E1'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="58" cy="58" r="36" />
+              <path d="M 58,14 A 46,46 0 0 1 58,102" />
+              <line x1="58" y1="102" x2="58" y2="120" />
+              <path d="M 34,120 H 82" />
+              <ellipse cx="58" cy="58" rx="18" ry="36" />
+              <line x1="22" y1="58" x2="94" y2="58" />
+            </g>
+          </svg>
+        );
+      case 'school-doodle-pencils':
+        return (
+          <svg viewBox="0 0 110 130" width={el.width} height={el.height}>
+            <g fill="none" stroke={c1 || '#CBD5E1'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M 26,56 L 82,66 L 72,118 C 70,124 20,116 18,108 Z" />
+              {/* Pencils sticking out */}
+              <path d="M 38,56 L 44,20 L 52,10 L 56,22 L 50,58" />
+              <path d="M 56,60 L 70,28 L 80,20 L 82,32 L 68,62" />
+              <path d="M 70,63 L 88,36 L 96,28 L 98,40 L 80,65" />
+            </g>
+          </svg>
+        );
       default:
         return (
           <svg viewBox="0 0 100 100" width={el.width} height={el.height}>
@@ -870,6 +1225,155 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
     const w = el.width;
     const h = el.height;
 
+    if (el.variant === 'ideal-student-medal') {
+      return (
+        <svg viewBox="0 0 160 190" width={w} height={h}>
+          <defs>
+            <linearGradient id={`ideal-gold-${el.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#FFF0A8" />
+              <stop offset="45%" stopColor={accent || '#EAB308'} />
+              <stop offset="85%" stopColor={primary || '#A16207'} />
+              <stop offset="100%" stopColor="#FDE047" />
+            </linearGradient>
+          </defs>
+          {/* Gold Ribbons at Bottom */}
+          <polygon points="48,118 22,174 46,164 56,184 74,126" fill={`url(#ideal-gold-${el.id})`} stroke={primary} strokeWidth="1.2" />
+          <polygon points="112,118 138,174 114,164 104,184 86,126" fill={`url(#ideal-gold-${el.id})`} stroke={primary} strokeWidth="1.2" />
+          {/* Scalloped Gold Sunburst Outer Disc */}
+          <polygon
+            points="80,8 92,16 106,12 114,24 128,26 131,40 144,48 141,62 150,74 142,86 146,100 134,109 132,123 118,127 110,139 96,136 84,146 72,138 58,144 48,133 34,135 28,121 15,116 16,102 6,91 12,78 6,64 17,54 17,40 30,34 36,20 50,20 60,8 73,13"
+            fill={`url(#ideal-gold-${el.id})`}
+            stroke={primary}
+            strokeWidth="1.8"
+          />
+          <circle cx="80" cy="76" r="54" fill={`url(#ideal-gold-${el.id})`} stroke="#1E293B" strokeWidth="2.5" />
+          <circle cx="80" cy="76" r="48" fill="none" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 2" />
+          <text
+            x="80"
+            y="68"
+            textAnchor="middle"
+            fill="#111827"
+            fontFamily="Cairo"
+            fontSize="18"
+            fontWeight="800"
+          >
+            {el.primaryText}
+          </text>
+          <text
+            x="80"
+            y="94"
+            textAnchor="middle"
+            fill="#111827"
+            fontFamily="Cairo"
+            fontSize="21"
+            fontWeight="900"
+          >
+            {el.secondaryText}
+          </text>
+        </svg>
+      );
+    }
+
+    if (el.variant === 'anta-mumayaz-medal') {
+      return (
+        <svg viewBox="0 0 200 270" width={w} height={h}>
+          <defs>
+            <linearGradient id={`am-gold-${el.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#FDE68A" />
+              <stop offset="50%" stopColor={accent || '#D4AF37'} />
+              <stop offset="100%" stopColor="#92400E" />
+            </linearGradient>
+          </defs>
+          {/* Navy & Gold Bottom Ribbons */}
+          <polygon points="56,158 34,255 64,238 88,262 96,166" fill={primary || '#05204A'} stroke={`url(#am-gold-${el.id})`} strokeWidth="4" />
+          <polygon points="144,158 166,255 136,238 112,262 104,166" fill={primary || '#05204A'} stroke={`url(#am-gold-${el.id})`} strokeWidth="4" />
+          {/* Scalloped Metallic Gold Rim */}
+          <polygon
+            points="100,10 116,18 134,14 144,28 162,32 166,49 182,60 178,78 190,94 180,110 184,128 170,140 168,158 150,163 140,180 122,177 108,189 92,179 76,188 62,175 44,177 36,160 18,154 18,136 6,124 13,106 6,89 18,75 18,57 35,49 42,31 60,30 72,15 89,20"
+            fill={`url(#am-gold-${el.id})`}
+            stroke="#854D0E"
+            strokeWidth="2"
+          />
+          <circle cx="100" cy="100" r="70" fill={primary || '#05204A'} stroke={`url(#am-gold-${el.id})`} strokeWidth="4.5" />
+          <circle cx="100" cy="100" r="61" fill="none" stroke={`url(#am-gold-${el.id})`} strokeWidth="1.8" />
+          {/* White Laurel Wreath & Bottom Star */}
+          <path d="M 84,142 C 54,132 48,92 64,62" fill="none" stroke="#FFFFFF" strokeWidth="4.5" strokeDasharray="8 4" strokeLinecap="round" />
+          <path d="M 116,142 C 146,132 152,92 136,62" fill="none" stroke="#FFFFFF" strokeWidth="4.5" strokeDasharray="8 4" strokeLinecap="round" />
+          <polygon points="100,136 103,143 111,143 105,148 107,155 100,150 93,155 95,148 89,143 97,143" fill="#FFFFFF" />
+          {/* Editable Center Text */}
+          <text
+            x="100"
+            y="88"
+            textAnchor="middle"
+            fill={`url(#am-gold-${el.id})`}
+            fontFamily="Cairo"
+            fontSize="24"
+            fontWeight="800"
+          >
+            {el.primaryText}
+          </text>
+          <text
+            x="100"
+            y="118"
+            textAnchor="middle"
+            fill={`url(#am-gold-${el.id})`}
+            fontFamily="Cairo"
+            fontSize="26"
+            fontWeight="900"
+          >
+            {el.secondaryText}
+          </text>
+        </svg>
+      );
+    }
+
+    if (el.variant === 'navy-gold-future-seal') {
+      return (
+        <svg viewBox="0 0 160 160" width={w} height={h}>
+          {/* Scalloped Dark Navy Seal */}
+          <polygon
+            points="80,8 93,14 108,11 116,23 131,26 134,41 147,50 144,64 153,77 145,90 148,105 136,115 134,130 119,134 111,147 96,145 84,154 71,146 57,153 46,142 31,144 25,130 11,125 11,110 2,99 8,85 2,71 12,60 12,45 25,38 31,24 46,23 56,11 70,15"
+            fill={primary || '#05204A'}
+            stroke={accent || '#D4AF37'}
+            strokeWidth="2.5"
+          />
+          <circle cx="80" cy="80" r="58" fill={primary || '#05204A'} stroke={accent || '#D4AF37'} strokeWidth="3.5" />
+          <circle cx="80" cy="80" r="50" fill="none" stroke={accent || '#D4AF37'} strokeWidth="1.2" />
+          {/* Laurel Wreath */}
+          <path d="M 68,120 C 42,110 38,76 52,50" fill="none" stroke={accent || '#D4AF37'} strokeWidth="4" strokeDasharray="7 3" strokeLinecap="round" />
+          <path d="M 92,120 C 118,110 122,76 108,50" fill="none" stroke={accent || '#D4AF37'} strokeWidth="4" strokeDasharray="7 3" strokeLinecap="round" />
+          {/* 3 Top Stars & 1 Bottom Star */}
+          <polygon points="80,36 82,42 88,42 83,46 85,52 80,48 75,52 77,46 72,42 78,42" fill={accent || '#D4AF37'} />
+          <circle cx="66" cy="46" r="2.5" fill={accent || '#D4AF37'} />
+          <circle cx="94" cy="46" r="2.5" fill={accent || '#D4AF37'} />
+          <polygon points="80,118 82,123 87,123 83,126 84,131 80,128 76,131 77,126 73,123 78,123" fill={accent || '#D4AF37'} />
+          {/* Editable Text */}
+          <text
+            x="80"
+            y="76"
+            textAnchor="middle"
+            fill="#FFFFFF"
+            fontFamily="Cairo"
+            fontSize="13.5"
+            fontWeight="800"
+          >
+            {el.primaryText}
+          </text>
+          <text
+            x="80"
+            y="96"
+            textAnchor="middle"
+            fill="#FFFFFF"
+            fontFamily="Cairo"
+            fontSize="13.5"
+            fontWeight="800"
+          >
+            {el.secondaryText}
+          </text>
+        </svg>
+      );
+    }
+
     return (
       <svg viewBox="0 0 140 140" width={w} height={h}>
         {/* Ribbons at bottom for wax/excellence seals */}
@@ -947,16 +1451,18 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
   const renderSignatureElement = (el: SignatureCertificateElement) => {
     const w = el.width;
     const h = el.height;
-    const midX = w / 2;
 
     return (
-      <g>
+      <svg viewBox="0 0 230 105" width={w} height={h} preserveAspectRatio="xMidYMid meet">
         {/* Signature graphic or calligraphic text */}
         {el.signatureMode === 'text' || !el.signatureDataUrl ? (
           <text
-            x={midX}
+            x={115}
             y={36}
             textAnchor="middle"
+            direction="rtl"
+            unicodeBidi="embed"
+            style={{ direction: 'rtl', unicodeBidi: 'embed' }}
             fill={el.color || '#0B192C'}
             fontFamily={el.fontFamily || 'Aref Ruqaa'}
             fontSize="24"
@@ -968,7 +1474,7 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
         ) : (
           <image
             href={el.signatureDataUrl}
-            x={midX - 75}
+            x={40}
             y={2}
             width={150}
             height={46}
@@ -981,7 +1487,7 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
           <line
             x1={20}
             y1={52}
-            x2={w - 20}
+            x2={210}
             y2={52}
             stroke={el.color || '#0B192C'}
             strokeWidth="1.5"
@@ -991,9 +1497,12 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
 
         {/* Signer Name */}
         <text
-          x={midX}
+          x={115}
           y={74}
           textAnchor="middle"
+          direction="rtl"
+          unicodeBidi="embed"
+          style={{ direction: 'rtl', unicodeBidi: 'embed' }}
           fill={el.color || '#0B192C'}
           fontFamily="Cairo"
           fontSize="15.5"
@@ -1004,9 +1513,12 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
 
         {/* Signer Job Title */}
         <text
-          x={midX}
+          x={115}
           y={94}
           textAnchor="middle"
+          direction="rtl"
+          unicodeBidi="embed"
+          style={{ direction: 'rtl', unicodeBidi: 'embed' }}
           fill={el.color || '#0B192C'}
           fontFamily="Tajawal"
           fontSize="13"
@@ -1015,8 +1527,8 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
         >
           {el.signerTitle}
         </text>
-        <rect x="0" y="0" width={w} height={h} fill="transparent" />
-      </g>
+        <rect x="0" y="0" width="230" height="105" fill="transparent" />
+      </svg>
     );
   };
 
@@ -1091,6 +1603,7 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
           textAnchor={anchor}
           direction={el.direction}
           unicodeBidi="embed"
+          style={{ direction: el.direction, unicodeBidi: 'embed' }}
           fontFamily={el.fontFamily}
           fontSize={effectiveFontSize}
           fontWeight={el.fontWeight}
@@ -1102,7 +1615,14 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
           filter={el.textShadow ? `url(#drop-shadow-${uid})` : undefined}
         >
           {lines.map((line, idx) => (
-            <tspan key={idx} x={textX} dy={idx === 0 ? 0 : lineStep}>
+            <tspan
+              key={idx}
+              x={textX}
+              dy={idx === 0 ? 0 : lineStep}
+              direction={el.direction}
+              unicodeBidi="embed"
+              style={{ direction: el.direction, unicodeBidi: 'embed' }}
+            >
               {line}
             </tspan>
           ))}
@@ -1205,8 +1725,11 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
             onDoubleClick={(e) => {
               if (!interactive) return;
               e.stopPropagation();
-              if (el.type === 'text' && !el.locked) {
-                onDoubleClickText?.(el);
+              if (!el.locked) {
+                onDoubleClickElement?.(el);
+                if (el.type === 'text') {
+                  onDoubleClickText?.(el);
+                }
               }
             }}
           >
@@ -1239,6 +1762,8 @@ export const CertificateRenderer: React.FC<CertificateRendererProps> = ({
                         ['ne', el.width - 2, -6],
                         ['sw', -6, el.height - 2],
                         ['se', el.width - 2, el.height - 2],
+                        ['w', -6, el.height / 2 - 5],
+                        ['e', el.width - 2, el.height / 2 - 5],
                       ] as const
                     ).map(([handle, hx, hy]) => (
                       <rect

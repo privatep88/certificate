@@ -128,6 +128,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   >([]);
 
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const quickTextInputRef = useRef<HTMLInputElement | null>(null);
   const dragStateRef = useRef<{
     mode: 'move' | 'resize';
     elementId: string;
@@ -137,7 +138,8 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
     origY: number;
     origW: number;
     origH: number;
-    handle?: 'nw' | 'ne' | 'sw' | 'se';
+    origFontSize?: number;
+    handle?: 'nw' | 'ne' | 'sw' | 'se' | 'e' | 'w';
     hasPushedHistory?: boolean;
   } | null>(null);
 
@@ -149,14 +151,16 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   // Detect out-of-bounds elements & empty required fields
   const outOfBoundsElements = useMemo(() => {
     const { widthPx, heightPx } = design.pageConfig;
-    return design.elements.filter(
-      (el) =>
-        el.visible &&
-        (el.x < 12 ||
-          el.y < 12 ||
-          el.x + el.width > widthPx - 12 ||
-          el.y + el.height > heightPx - 12)
-    );
+    return design.elements.filter((el) => {
+      if (!el.visible) return false;
+      const pad = el.type === 'text' ? 12 : 0;
+      return (
+        el.x < pad ||
+        el.y < pad ||
+        el.x + el.width > widthPx - pad ||
+        el.y + el.height > heightPx - pad
+      );
+    });
   }, [design]);
 
   const emptyRequiredFields = useMemo(() => {
@@ -247,12 +251,20 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
           nextH = possibleH;
         }
 
+        const isCornerHandle = st.handle.length === 2;
+
         onChangeDesign(
           {
             ...design,
-            elements: design.elements.map((el) =>
-              el.id === st.elementId ? { ...el, x: nextX, y: nextY, width: nextW, height: nextH } : el
-            ),
+            elements: design.elements.map((el) => {
+              if (el.id !== st.elementId) return el;
+              if (el.type === 'text' && isCornerHandle && st.origFontSize) {
+                const scaleRatio = (nextW / Math.max(1, st.origW) + nextH / Math.max(1, st.origH)) / 2;
+                const nextFontSize = Math.max(10, Math.min(96, Math.round(st.origFontSize * scaleRatio)));
+                return { ...el, x: nextX, y: nextY, width: nextW, height: nextH, fontSize: nextFontSize };
+              }
+              return { ...el, x: nextX, y: nextY, width: nextW, height: nextH };
+            }),
             updatedAt: new Date().toISOString(),
           },
           shouldPushHistory
@@ -679,6 +691,78 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
     });
     if (selectedElementId === id) setSelectedElementId(null);
   };
+
+  // Keyboard shortcuts for arrow nudging, delete, duplicate, undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          if (canRedo) onRedo();
+        } else if (canUndo) {
+          onUndo();
+        }
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        if (canRedo) onRedo();
+        return;
+      }
+
+      if (!selectedElementId) return;
+      const currentEl = design.elements.find((el) => el.id === selectedElementId);
+      if (!currentEl) return;
+
+      if (e.key === 'Escape') {
+        setSelectedElementId(null);
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        handleDuplicateElement(currentEl.id);
+        return;
+      }
+
+      if (currentEl.locked) return;
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        handleDeleteElement(currentEl.id);
+        return;
+      }
+
+      const step = e.shiftKey ? 10 : 2;
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        updateElement(currentEl.id, { x: currentEl.x - step });
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        updateElement(currentEl.id, { x: currentEl.x + step });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        updateElement(currentEl.id, { y: currentEl.y - step });
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        updateElement(currentEl.id, { y: currentEl.y + step });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedElementId, design.elements, canUndo, canRedo, onUndo, onRedo]);
 
   const handleAddOrnament = (variant: OrnamentVariant, defaultColor: string, label: string) => {
     const { widthPx, heightPx } = design.pageConfig;
@@ -2566,31 +2650,69 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                 {/* Frame customization */}
                 <div className="space-y-3">
                   <h3 className="text-xs font-bold text-slate-900">
-                    {isAr ? 'هندسة الإطار الخارجي وألوانه وسماكته' : 'Certificate Frame Architecture & Colors'}
+                    {isAr ? 'هندسة الإطار الخارجي والزوايا وألوانه وسماكته' : 'Certificate Frame Architecture & Corners'}
                   </h3>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      {isAr ? 'طراز الإطار الهندسي / المؤسسي' : 'Frame Architecture Style'}
-                    </label>
-                    <select
-                      value={design.pageConfig.frameType}
-                      onChange={(e) =>
-                        onChangeDesign({
-                          ...design,
-                          pageConfig: {
-                            ...design.pageConfig,
-                            frameType: e.target.value as FrameType,
-                          },
-                        })
-                      }
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
-                    >
-                      {ARTISTIC_STYLES.map((st) => (
-                        <option key={st.id} value={st.frameType}>
-                          {st.number}. {isAr ? `${st.nameAr} (${st.frameType})` : `${st.nameEn}`}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        {isAr ? 'طراز الإطار الهندسي / المؤسسي' : 'Frame Architecture Style'}
+                      </label>
+                      <select
+                        value={design.pageConfig.frameType}
+                        onChange={(e) =>
+                          onChangeDesign({
+                            ...design,
+                            pageConfig: {
+                              ...design.pageConfig,
+                              frameType: e.target.value as FrameType,
+                              borderThickness:
+                                e.target.value === 'minimal-clean'
+                                  ? 0
+                                  : Math.max(1, design.pageConfig.borderThickness || 3),
+                            },
+                          })
+                        }
+                        className="w-full px-2.5 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                      >
+                        <option value="minimal-clean">
+                          {isAr ? '0. بدون إطار خارجي (Minimal Clean)' : '0. Minimal Clean (No Frame)'}
                         </option>
-                      ))}
-                    </select>
+                        {Array.from(
+                          new Map(ARTISTIC_STYLES.map((st) => [st.frameType, st])).values()
+                        ).map((st, idx) => (
+                          <option key={st.frameType} value={st.frameType}>
+                            {idx + 1}. {isAr ? `${st.nameAr} (${st.frameType})` : `${st.nameEn}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        {isAr ? 'زخرفة الزوايا الأربع (Corner Ornaments)' : 'Corner Ornaments'}
+                      </label>
+                      <select
+                        value={design.pageConfig.cornerOrnament || 'geometric'}
+                        onChange={(e) =>
+                          onChangeDesign({
+                            ...design,
+                            pageConfig: {
+                              ...design.pageConfig,
+                              cornerOrnament: e.target.value as CertificateDesign['pageConfig']['cornerOrnament'],
+                            },
+                          })
+                        }
+                        className="w-full px-2.5 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                      >
+                        <option value="none">{isAr ? 'بدون زخرفة زوايا' : 'None'}</option>
+                        <option value="geometric">{isAr ? 'زوايا هندسية كلاسيكية' : 'Geometric Brackets'}</option>
+                        <option value="arabesque">{isAr ? 'زوايا أرابيسك إسلامية' : 'Islamic Arabesque'}</option>
+                        <option value="royal-crest">{isAr ? 'تيجان ملكية مذهبة' : 'Royal Crest Corners'}</option>
+                        <option value="floral">{isAr ? 'زخرفة نباتية مورقة' : 'Botanical Floral'}</option>
+                        <option value="classic-scroll">{isAr ? 'لفائف ديوانية كلاسيكية' : 'Classic Scroll'}</option>
+                        <option value="stars">{isAr ? 'نجوم سداسية وثمانية' : 'Star Filigree'}</option>
+                      </select>
+                    </div>
                   </div>
                   <div className="grid grid-cols-4 gap-2">
                     <div>
@@ -2643,17 +2765,17 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                     </div>
                     <div>
                       <label className="block text-[11px] text-slate-600 mb-1">
-                        {isAr ? 'سماكة الإطار' : 'Thickness'}
+                        {isAr ? 'سماكة الإطار (0-8)' : 'Thickness (0-8)'}
                       </label>
                       <input
                         type="number"
-                        min={1}
+                        min={0}
                         max={8}
                         value={design.pageConfig.borderThickness}
                         onChange={(e) =>
                           onChangeDesign({
                             ...design,
-                            pageConfig: { ...design.pageConfig, borderThickness: Number(e.target.value) },
+                            pageConfig: { ...design.pageConfig, borderThickness: Math.max(0, Number(e.target.value)) },
                           })
                         }
                         className="w-full px-2.5 py-1 text-xs border border-slate-300 rounded-lg font-mono"
@@ -3315,6 +3437,186 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
 
         {/* Center Interactive Design Canvas Area (7 columns on desktop) */}
         <div className="lg:col-span-7 bg-slate-200/80 rounded-xl border border-slate-300 p-4 sm:p-6 flex flex-col items-center justify-center min-h-[540px] overflow-auto">
+          {/* Quick Floating On-Canvas Element & Text Editor Bar */}
+          {selectedElement && (
+            <div className="w-full max-w-4xl mb-3 bg-white rounded-xl border border-amber-300 shadow-md px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-950 text-[11px] font-bold shrink-0">
+                  {selectedElement.name}
+                </span>
+
+                {selectedElement.type === 'text' && (
+                  <input
+                    ref={quickTextInputRef}
+                    type="text"
+                    dir={selectedElement.direction}
+                    value={selectedElement.content}
+                    onChange={(e) => updateElement(selectedElement.id, { content: e.target.value }, false)}
+                    placeholder={isAr ? 'حرر النص مباشرة هنا...' : 'Edit text directly...'}
+                    className="flex-1 min-w-[160px] px-2.5 py-1 text-xs font-semibold bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-amber-600 focus:bg-white"
+                  />
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                {selectedElement.type === 'text' && (
+                  <>
+                    <select
+                      value={selectedElement.fontFamily}
+                      onChange={(e) => updateElement(selectedElement.id, { fontFamily: e.target.value })}
+                      className="px-2 py-1 text-xs border border-slate-300 rounded-lg bg-white max-w-[130px]"
+                      style={{ fontFamily: selectedElement.fontFamily }}
+                    >
+                      {FONT_LIBRARY.map((f) => (
+                        <option key={f.family} value={f.family} style={{ fontFamily: f.family }}>
+                          {isAr ? f.labelAr : f.labelEn}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-white">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateElement(selectedElement.id, {
+                            fontSize: Math.max(10, selectedElement.fontSize - 2),
+                          })
+                        }
+                        className="px-2 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                        title={isAr ? 'تصغير الخط' : 'Decrease Font Size'}
+                      >
+                        -
+                      </button>
+                      <span className="px-1.5 text-[11px] font-mono font-bold text-slate-800">
+                        {selectedElement.fontSize}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateElement(selectedElement.id, {
+                            fontSize: Math.min(96, selectedElement.fontSize + 2),
+                          })
+                        }
+                        className="px-2 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                        title={isAr ? 'تكبير الخط' : 'Increase Font Size'}
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <input
+                      type="color"
+                      value={selectedElement.color}
+                      onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
+                      title={isAr ? 'لون النص' : 'Text Color'}
+                      className="w-7 h-7 rounded border border-slate-300 cursor-pointer"
+                    />
+
+                    <div className="flex items-center bg-slate-100 p-0.5 rounded-lg">
+                      <button
+                        type="button"
+                        onClick={() => updateElement(selectedElement.id, { align: 'right' })}
+                        className={`p-1 rounded ${
+                          selectedElement.align === 'right' ? 'bg-white shadow-xs text-slate-900' : 'text-slate-500'
+                        }`}
+                        title={isAr ? 'محاذاة لليمين' : 'Align Right'}
+                      >
+                        <AlignRight className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateElement(selectedElement.id, { align: 'center' })}
+                        className={`p-1 rounded ${
+                          selectedElement.align === 'center' ? 'bg-white shadow-xs text-slate-900' : 'text-slate-500'
+                        }`}
+                        title={isAr ? 'توسيط النص' : 'Align Center'}
+                      >
+                        <AlignCenter className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateElement(selectedElement.id, { align: 'left' })}
+                        className={`p-1 rounded ${
+                          selectedElement.align === 'left' ? 'bg-white shadow-xs text-slate-900' : 'text-slate-500'
+                        }`}
+                        title={isAr ? 'محاذاة لليسار' : 'Align Left'}
+                      >
+                        <AlignLeft className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateElement(selectedElement.id, {
+                          direction: selectedElement.direction === 'rtl' ? 'ltr' : 'rtl',
+                        })
+                      }
+                      className="px-2 py-1 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg"
+                      title={isAr ? 'تبديل اتجاه النص العربي/الإنجليزي' : 'Toggle RTL/LTR'}
+                    >
+                      {selectedElement.direction === 'rtl' ? 'RTL' : 'LTR'}
+                    </button>
+                  </>
+                )}
+
+                {selectedElement.type === 'signature' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingSignature(selectedElement);
+                      setSignatureModalOpen(true);
+                    }}
+                    className="px-2.5 py-1 text-xs font-bold bg-slate-900 text-white rounded-lg hover:bg-slate-800"
+                  >
+                    {isAr ? 'رسم / تعديل التوقيع' : 'Edit Signature'}
+                  </button>
+                )}
+
+                {(selectedElement.type === 'ornament' ||
+                  selectedElement.type === 'divider' ||
+                  selectedElement.type === 'seal') && (
+                  <input
+                    type="color"
+                    value={selectedElement.color}
+                    onChange={(e) => updateElement(selectedElement.id, { color: e.target.value })}
+                    title={isAr ? 'تغيير اللون' : 'Change Color'}
+                    className="w-7 h-7 rounded border border-slate-300 cursor-pointer"
+                  />
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => updateElement(selectedElement.id, { locked: !selectedElement.locked })}
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100"
+                  title={isAr ? 'قفل / فتح القفل' : 'Lock / Unlock'}
+                >
+                  {selectedElement.locked ? (
+                    <Lock className="w-3.5 h-3.5 text-rose-600" />
+                  ) : (
+                    <Unlock className="w-3.5 h-3.5" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDuplicateElement(selectedElement.id)}
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100"
+                  title={isAr ? 'تكرار العنصر' : 'Duplicate'}
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteElement(selectedElement.id)}
+                  className="p-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50"
+                  title={isAr ? 'حذف العنصر' : 'Delete'}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+
           <div
             className="bg-white shadow-2xl rounded-sm transition-transform origin-center"
             style={{
@@ -3363,6 +3665,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                   origY: el.y,
                   origW: el.width,
                   origH: el.height,
+                  origFontSize: el.type === 'text' ? el.fontSize : undefined,
                   handle,
                   hasPushedHistory: false,
                 };
@@ -3370,6 +3673,19 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
               onDoubleClickText={(txtEl) => {
                 setSelectedElementId(txtEl.id);
                 setActiveTab('typography');
+                setTimeout(() => {
+                  quickTextInputRef.current?.focus();
+                  quickTextInputRef.current?.select();
+                }, 40);
+              }}
+              onDoubleClickElement={(el) => {
+                setSelectedElementId(el.id);
+                if (el.type === 'signature') {
+                  setEditingSignature(el);
+                  setSignatureModalOpen(true);
+                } else {
+                  setActiveTab('typography');
+                }
               }}
               showGrid={showGrid}
               snapLines={snapLines}
@@ -3380,8 +3696,8 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
           <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-[11px] text-slate-600">
             <span>
               {isAr
-                ? '💡 انقر على أي عنصر في الشهادة لسحبه أو تغيير حجمه، أو انقر مرتين على أي نص لتحريره.'
-                : '💡 Click any element to drag or resize, or double-click any text to edit.'}
+                ? '💡 انقر على أي عنصر لسحبه أو تغيير حجمه من الزوايا/الجوانب، أو انقر مرتين لتحريره مباشرة، أو استخدم الأسهم للتحريك الدقيق.'
+                : '💡 Click any element to drag or resize, double-click to edit inline, or use arrow keys to nudge.'}
             </span>
             <span className="font-mono tabular-nums">
               {design.pageConfig.format} · {design.pageConfig.widthMm}×{design.pageConfig.heightMm}mm

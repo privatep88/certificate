@@ -37,11 +37,12 @@ async function fetchInlinedFontFamilyCss(family: string): Promise<string> {
     if (!res.ok) return '';
 
     let cssText = await res.text();
-    const urlRegex = /url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g;
+    const urlRegex = /url\(\s*['"]?(https:\/\/fonts\.gstatic\.com\/[^)'"]+)['"]?\s*\)/g;
     const matches = Array.from(cssText.matchAll(urlRegex));
 
     await Promise.all(
       matches.map(async (match) => {
+        const fullMatch = match[0];
         const fontUrl = match[1].replace(/['"]/g, '');
         try {
           const fontRes = await fetch(fontUrl);
@@ -49,7 +50,7 @@ async function fetchInlinedFontFamilyCss(family: string): Promise<string> {
           const buf = await fontRes.arrayBuffer();
           const b64 = arrayBufferToBase64(buf);
           const dataUri = `data:font/woff2;base64,${b64}`;
-          cssText = cssText.split(match[1]).join(`'${dataUri}'`);
+          cssText = cssText.split(fullMatch).join(`url('${dataUri}')`);
         } catch {
           // Ignore individual font binary error
         }
@@ -64,7 +65,16 @@ async function fetchInlinedFontFamilyCss(family: string): Promise<string> {
 }
 
 async function getEmbeddedFontsCssForDesign(design: CertificateDesign): Promise<string> {
-  const families = new Set<string>(['Cairo', 'Tajawal', 'Aref Ruqaa', 'Plus Jakarta Sans', 'Rakkas', 'Amiri']);
+  const families = new Set<string>([
+    'Cairo',
+    'Tajawal',
+    'Aref Ruqaa',
+    'Plus Jakarta Sans',
+    'Rakkas',
+    'Amiri',
+    'Reem Kufi',
+    'Noto Kufi Arabic',
+  ]);
   for (const el of design.elements) {
     if (el.type === 'text' && el.fontFamily) {
       families.add(el.fontFamily);
@@ -77,19 +87,46 @@ async function getEmbeddedFontsCssForDesign(design: CertificateDesign): Promise<
   return [GOOGLE_FONTS_IMPORT, ...rules.filter(Boolean)].join('\n');
 }
 
+function utf8SvgDataUriToBase64(dataUri: string): string {
+  try {
+    const prefix = 'data:image/svg+xml;utf8,';
+    if (!dataUri.startsWith(prefix)) return dataUri;
+    const rawPayload = dataUri.slice(prefix.length);
+    const decodedSvg = decodeURIComponent(rawPayload);
+    const utf8Bytes = new TextEncoder().encode(decodedSvg);
+    const b64 = arrayBufferToBase64(utf8Bytes.buffer);
+    return `data:image/svg+xml;base64,${b64}`;
+  } catch {
+    return dataUri;
+  }
+}
+
 /**
- * Ensures any <image> tags inside the cloned SVG use self-contained data: URIs
- * so rendering the SVG inside an isolated Blob Image never drops external logos or signatures.
+ * Ensures any <image> tags inside the cloned SVG use self-contained base64 data: URIs
+ * so rendering the SVG inside an isolated Blob Image never drops external logos,
+ * nested SVG decorative layers, or signatures.
  */
 async function inlineExternalImagesInSvgClone(svgClone: SVGSVGElement): Promise<void> {
   const imageNodes = Array.from(svgClone.querySelectorAll('image'));
   await Promise.all(
     imageNodes.map(async (imgNode) => {
       const href = imgNode.getAttribute('href') || imgNode.getAttribute('xlink:href');
-      if (!href || href.startsWith('data:')) return;
+      if (!href) return;
+      if (href.startsWith('data:image/svg+xml;utf8,')) {
+        const b64Uri = utf8SvgDataUriToBase64(href);
+        imgNode.setAttribute('href', b64Uri);
+        imgNode.setAttribute('xlink:href', b64Uri);
+        return;
+      }
+      if (href.startsWith('data:')) {
+        imgNode.setAttribute('href', href);
+        imgNode.setAttribute('xlink:href', href);
+        return;
+      }
       if (imageDataUriCache.has(href)) {
-        imgNode.setAttribute('href', imageDataUriCache.get(href)!);
-        imgNode.removeAttribute('xlink:href');
+        const cached = imageDataUriCache.get(href)!;
+        imgNode.setAttribute('href', cached);
+        imgNode.setAttribute('xlink:href', cached);
         return;
       }
       try {
@@ -102,7 +139,7 @@ async function inlineExternalImagesInSvgClone(svgClone: SVGSVGElement): Promise<
         const dataUri = `data:${mime};base64,${b64}`;
         imageDataUriCache.set(href, dataUri);
         imgNode.setAttribute('href', dataUri);
-        imgNode.removeAttribute('xlink:href');
+        imgNode.setAttribute('xlink:href', dataUri);
       } catch {
         // Keep original href if fetch fails
       }
@@ -114,10 +151,6 @@ async function inlineExternalImagesInSvgClone(svgClone: SVGSVGElement): Promise<
  * Serializes an SVG element while strictly preserving its logical coordinate space in `viewBox`
  * and setting the output viewport `width` and `height` independently.
  *
- * CRITICAL FIX:
- * Previously, `viewBox` was overwritten with `0 0 ${targetWidth} ${targetHeight}` (the scaled DPI pixels),
- * while all internal elements remained in `0..logicalWidthPx` (`0..1123`). That caused the certificate
- * to shrink into the top-left corner (~1/scaleFactor of the page) with huge blank white space!
  * Keeping `viewBox="0 0 ${logicalWidthPx} ${logicalHeightPx}"` while setting `width="${outputWidthAttr}"`
  * and `height="${outputHeightAttr}"` makes the SVG vector engine scale the design uniformly across 100%
  * of the output canvas/page with zero unintended margins.
@@ -141,7 +174,7 @@ export function serializeSvgWithFonts(
   clone.removeAttribute('class');
 
   const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-  styleEl.textContent = `${customFontCss || GOOGLE_FONTS_IMPORT}\ntext { text-rendering: geometricPrecision; shape-rendering: geometricPrecision; }`;
+  styleEl.textContent = `${customFontCss || GOOGLE_FONTS_IMPORT}\ntext { text-rendering: geometricPrecision; shape-rendering: geometricPrecision; font-feature-settings: "liga" 1, "calt" 1; }`;
   clone.insertBefore(styleEl, clone.firstChild);
 
   const serializer = new XMLSerializer();
@@ -195,6 +228,7 @@ export async function renderSvgToCanvas(
         if (img.decode) {
           await img.decode();
         }
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       } catch {
         // Ignore decode warning
       }

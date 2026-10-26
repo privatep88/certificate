@@ -11,6 +11,7 @@ import {
   SPACE_WEEK_2025_LOGO_SVG,
   TEACHER_DAY_2025_LOGO_SVG,
 } from './saudiCertificateAssets';
+import { WARITH_UNIVERSITY_CREST_SVG } from './attachedCertificateTemplates';
 
 export const CERTIFICATE_CATEGORIES: CertificateCategory[] = [
   {
@@ -1300,6 +1301,18 @@ export const ORNAMENT_CATALOG: {
   { variant: 'graduation-cap', nameAr: 'قبعة تخرج أكاديمية', nameEn: 'Academic Mortarboard Cap', categoryAr: 'شارات التميز', defaultColor: '#0F172A' },
   { variant: 'heart-care', nameAr: 'وسام العطاء التطوعي والإنساني', nameEn: 'Humanitarian Care Emblem', categoryAr: 'أوسمة', defaultColor: '#E11D48' },
   { variant: 'ribbon-banner', nameAr: 'شريط عنوان زخرفي', nameEn: 'Decorative Ribbon Banner', categoryAr: 'شرائط وأشرطة زخرفية', defaultColor: '#B45309' },
+  { variant: 'quran-rehal', nameAr: 'مصحف شريف مفتوح على حامل خشبي (رحل)', nameEn: 'Open Quran on Wooden Rehal Stand', categoryAr: 'مخطوطات وطغراء وخط عربي', defaultColor: '#F5F2E6' },
+  { variant: 'grad-cap-book-stars', nameAr: 'قبعة تخرج ذهبية على كتاب مفتوح ونجوم', nameEn: 'Graduation Cap on Open Book & Stars', categoryAr: 'شارات التميز', defaultColor: '#C58B2B' },
+  { variant: 'charcoal-gold-medal', nameAr: 'وسام ذهبي مسنن بمركز رمادي وإكليل غار', nameEn: 'Gold Scalloped Laurel Medal', categoryAr: 'ميداليات', defaultColor: '#D4AF37' },
+  { variant: 'navy-torch-book-medal', nameAr: 'وسام شعلة العلم والكتاب المفتوح (كحلي وذهبي)', nameEn: 'Navy & Gold Torch and Book Medal', categoryAr: 'ميداليات', defaultColor: '#D4AF37' },
+  { variant: 'stepped-gold-corner', nameAr: 'زخرفة زاوية هندسية ثلاثية الخطوط', nameEn: 'Triple Stepped Gold Corner', categoryAr: 'زخارف مركزية', defaultColor: '#E5A93C' },
+  { variant: 'royal-arabesque-crest', nameAr: 'حلية أرابيسك ملكية نباتية متناظرة', nameEn: 'Royal Arabesque Scrollwork Crest', categoryAr: 'زخارف مركزية', defaultColor: '#C5A059' },
+  { variant: 'title-sparkle-rays', nameAr: 'إشراقات عنوان احتفالية مزدوجة', nameEn: 'Celebratory Title Sparkle Rays', categoryAr: 'نجوم ونجيمات', defaultColor: '#0B556C' },
+  { variant: 'school-doodle-trophy', nameAr: 'رسم مائي مدرسي — كأس التفوق', nameEn: 'School Watermark — Trophy', categoryAr: 'عناصر رياضية', defaultColor: '#CBD5E1' },
+  { variant: 'school-doodle-books', nameAr: 'رسم مائي مدرسي — كومة كتب', nameEn: 'School Watermark — Stack of Books', categoryAr: 'شارات التميز', defaultColor: '#CBD5E1' },
+  { variant: 'school-doodle-backpack', nameAr: 'رسم مائي مدرسي — حقيبة مدرسية', nameEn: 'School Watermark — Backpack', categoryAr: 'عناصر طفولية', defaultColor: '#CBD5E1' },
+  { variant: 'school-doodle-globe', nameAr: 'رسم مائي مدرسي — الكرة الأرضية', nameEn: 'School Watermark — Globe', categoryAr: 'دوائر وزخارف هندسية', defaultColor: '#CBD5E1' },
+  { variant: 'school-doodle-pencils', nameAr: 'رسم مائي مدرسي — مقلمة أقلام', nameEn: 'School Watermark — Pencil Cup', categoryAr: 'عناصر طفولية', defaultColor: '#CBD5E1' },
 ];
 
 export const DIVIDER_CATALOG: {
@@ -1370,6 +1383,33 @@ export const SEAL_CATALOG: {
     color: '#0284C7',
     accentColor: '#E0F2FE',
   },
+  {
+    variant: 'ideal-student-medal',
+    nameAr: 'وسام الطالبة المثالية / الطالب المثالي الذهبي',
+    nameEn: 'Ideal Student Gold Sunburst Medal',
+    defaultPrimary: 'الطالبة',
+    defaultSecondary: 'المثالية',
+    color: '#A16207',
+    accentColor: '#EAB308',
+  },
+  {
+    variant: 'anta-mumayaz-medal',
+    nameAr: 'وسام «أنت مميز» الكحلي والذهبي بشريطين',
+    nameEn: 'You Are Special Navy & Gold Ribbon Medal',
+    defaultPrimary: 'أنت',
+    defaultSecondary: 'مميز',
+    color: '#05204A',
+    accentColor: '#D4AF37',
+  },
+  {
+    variant: 'navy-gold-future-seal',
+    nameAr: 'ختم «العلم طريق المستقبل» الكحلي والذهبي',
+    nameEn: 'Knowledge is the Path to the Future Seal',
+    defaultPrimary: 'العلم طريق',
+    defaultSecondary: 'المستقبل',
+    color: '#05204A',
+    accentColor: '#D4AF37',
+  },
 ];
 
 // Built-in SVG institutional emblems encoded as safe data URLs
@@ -1406,6 +1446,12 @@ export const BUILTIN_LOGOS: {
     nameAr: 'شعار يوم المعلم الرسمي 2025',
     nameEn: 'World Teacher Day 2025',
     src: TEACHER_DAY_2025_LOGO_SVG,
+  },
+  {
+    id: 'logo-warith-university',
+    nameAr: 'شعار جامعة وارث الأنبياء الأكاديمي',
+    nameEn: "University of Warith Al-Anbiya'a Crest",
+    src: WARITH_UNIVERSITY_CREST_SVG,
   },
   {
     id: 'logo-academy-gold',
