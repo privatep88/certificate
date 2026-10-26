@@ -27,7 +27,6 @@ import {
   Star,
   Trash2,
   Upload,
-  UserCheck,
   Users,
   X,
 } from 'lucide-react';
@@ -855,22 +854,14 @@ export function App() {
         {/* Account & Language Controls */}
         <div className="flex items-center gap-2 shrink-0">
           {currentUser ? (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 shrink-0">
-                <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span className="truncate max-w-[140px] sm:max-w-[200px]" title={currentUser.fullName}>
-                  {currentUser.fullName || (isAr ? 'المستخدم' : 'User')}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>{isAr ? 'تسجيل الخروج' : 'Sign Out'}</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>{isAr ? 'تسجيل الخروج' : 'Sign Out'}</span>
+            </button>
           ) : (
             <button
               type="button"
